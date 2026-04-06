@@ -230,6 +230,14 @@ td a:hover{text-decoration:underline}
 .search-bar{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rsm);padding:6px 10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;width:180px}
 .search-bar:focus{border-color:var(--border3)}
 select.fsel{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rsm);padding:5px 8px;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:11.5px;outline:none;cursor:pointer}
+
+/* CONTEXT MENU */
+.ctx-menu{position:fixed;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:500;min-width:150px;padding:4px;animation:mdin .12s ease}
+.ctx-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--rsm);font-size:12.5px;cursor:pointer;color:var(--text);transition:background .1s;border:none;background:none;width:100%;text-align:left}
+.ctx-item:hover{background:var(--bg3)}
+.ctx-item.danger{color:#b03030}
+.ctx-item.danger:hover{background:rgba(176,48,48,.07)}
+.ctx-divider{height:1px;background:var(--border);margin:3px 0}
 .import-zone{border:2px dashed var(--border2);border-radius:var(--r);padding:24px;text-align:center;cursor:pointer;transition:all .2s;color:var(--text3)}
 .import-zone:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
 </style>
@@ -671,33 +679,19 @@ async function loadFromDB() {
       S.data[b].creators = creators.filter(r=>r.brand===b).map(crFromDB);
       S.data[b].expenses = expenses.filter(r=>r.brand===b).map(expFromDB);
     });
-    // If DB is empty (first load), seed with defaults
-    if(slots.length===0) {
-      await seedDefaultData();
-    }
+    // All data comes from DB only — no auto-seeding
   } catch(e) { console.error('loadFromDB error', e); }
   document.body.style.opacity='1';
 }
 
 async function seedDefaultData() {
-  console.log('Seeding default data to Supabase...');
-  const allSlots=[], allUgc=[], allExp=[];
+  // Everything starts empty — no auto-seeding
   ['labo','leps','nuri'].forEach(b=>{
-    S.data[b].slots.forEach(s=>allSlots.push(slotToDB(s,b)));
-    S.data[b].ugc.forEach(u=>allUgc.push(ugcToDB(u,b)));
-    S.data[b].expenses.forEach(e=>allExp.push(expToDB(e,b)));
+    S.data[b].slots=[];
+    S.data[b].ugc=[];
+    S.data[b].expenses=[];
   });
-  // Batch upsert in chunks of 50
-  for(let i=0;i<allSlots.length;i+=50) {
-    await db.from('slots').upsert(allSlots.slice(i,i+50));
-  }
-  for(let i=0;i<allUgc.length;i+=50) {
-    await db.from('ugc_clips').upsert(allUgc.slice(i,i+50));
-  }
-  for(let i=0;i<allExp.length;i+=50) {
-    await db.from('expenses').upsert(allExp.slice(i,i+50));
-  }
-  console.log('Seed complete!');
+  console.log('Starting fresh — all data empty.');
 }
 
 // ── Real-time sync ──
@@ -887,7 +881,7 @@ function renderCal(){
         if(s.content)extra+=`<div style="font-size:8.5px;color:var(--text2);line-height:1.35;margin-top:1px;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${s.content}</div>`;
         if(s.product)extra+=`<div style="font-size:8px;color:var(--text3);margin-top:1px">📦 ${s.product}</div>`;
         if(s.ref)extra+=`<a href="${s.ref}" target="_blank" onclick="event.stopPropagation()" style="font-size:8px;color:var(--accent);display:block;margin-top:1px;text-decoration:none">🔗 레퍼런스</a>`;
-        inner+=`<div class="chip ch-${s.type}" data-sid="${s._id}">${dispType}${extra}</div>`;
+        inner+=`<div class="chip ch-${s.type}" data-sid="${s._id}" oncontextmenu="showCtxMenu(event,'${s._id}')">${dispType}${extra}</div>`;
       }
       });
       if(upSlts.length&&upSlts.some(s=>s.time))inner+=`<div class="ctime">10:00 KST · NY ${calcNY('10:00')}</div>`;
@@ -1515,10 +1509,57 @@ function addLegendItem(){
   document.getElementById('leg-name-input').value='';
 }
 
+
+/* ════ CONTEXT MENU ════ */
+let _ctxSlotId = null;
+
+function showCtxMenu(e, slotId) {
+  e.preventDefault();
+  e.stopPropagation();
+  _ctxSlotId = slotId;
+  const menu = document.getElementById('ctx-menu');
+  menu.style.display = 'block';
+  // Position
+  const x = Math.min(e.clientX, window.innerWidth - 180);
+  const y = Math.min(e.clientY, window.innerHeight - 160);
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+}
+
+function hideCtxMenu() {
+  document.getElementById('ctx-menu').style.display = 'none';
+  _ctxSlotId = null;
+}
+
+document.addEventListener('click', hideCtxMenu);
+document.addEventListener('keydown', e => { if(e.key === 'Escape') hideCtxMenu(); });
+
+function ctxAction(action) {
+  hideCtxMenu();
+  if(!_ctxSlotId) return;
+  const s = bd().slots.find(x => x._id === _ctxSlotId);
+  if(!s) return;
+  if(action === 'detail') {
+    openDayPop(s.date);
+  } else if(action === 'edit') {
+    openSlotEdit(_ctxSlotId);
+  } else if(action === 'duplicate') {
+    const newSlot = {...s, _id: gid()};
+    bd().slots.push(newSlot);
+    dbSave('slots', slotToDB(newSlot, S.brand));
+    renderCal();
+  } else if(action === 'delete') {
+    if(!confirm('이 슬롯을 삭제할까요?')) return;
+    S.data[S.brand].slots = bd().slots.filter(x => x._id !== _ctxSlotId);
+    dbDelete('slots', _ctxSlotId);
+    renderCal();
+  }
+}
+
 /* ════ INIT ════ */
 // First seed local defaults, then load from DB (which may override with shared data)
-initLaboUGC();
-['labo','leps','nuri'].forEach(b=>initSlots(b));
+// Data loads from Supabase only
+['labo','leps','nuri'].forEach(b=>{ S.data[b].slots=[]; S.data[b].ugc=[]; S.data[b].creators=[]; S.data[b].expenses=[]; });
 switchBrand('labo');
 renderLegend();
 // Load from Supabase and setup realtime
@@ -1549,5 +1590,14 @@ renderLegend();
   </div>
 </div>
 
+
+<!-- Context Menu -->
+<div class="ctx-menu" id="ctx-menu" style="display:none">
+  <button class="ctx-item" onclick="ctxAction('detail')">🔍 상세 보기</button>
+  <button class="ctx-item" onclick="ctxAction('edit')">✏️ 편집</button>
+  <button class="ctx-item" onclick="ctxAction('duplicate')">📋 복제</button>
+  <div class="ctx-divider"></div>
+  <button class="ctx-item danger" onclick="ctxAction('delete')">🗑️ 삭제</button>
+</div>
 </body>
 </html>
