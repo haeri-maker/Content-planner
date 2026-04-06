@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>콘텐츠 통합 캘린더</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --r:12px;--rsm:7px;
+  --labo:#c8306a;--labo-bg:#faedf3;--labo-bd:#e898c0;--labo-soft:#fdf0f6;
+  --leps:#5030b8;--leps-bg:#eeeafa;--leps-bd:#b8a8ef;--leps-soft:#f4f0fd;
+  --nuri:#0a7050;--nuri-bg:#e8f5f1;--nuri-bd:#9dd8c8;--nuri-soft:#f0faf7;
+  --bg:#f8f5f7;--bg2:#ffffff;--bg3:#f3edf1;--bg4:#ecdae4;
+  --border:#eddde6;--border2:#dfc8d4;--border3:#c898ae;
+  --text:#2a1820;--text2:#7a5068;--text3:#b890a0;
+  --accent:var(--labo);
+}
+.brand-labo{--accent:var(--labo);--accent-bg:var(--labo-bg);--accent-bd:var(--labo-bd);--accent-soft:var(--labo-soft)}
+.brand-leps{--accent:var(--leps);--accent-bg:var(--leps-bg);--accent-bd:var(--leps-bd);--accent-soft:var(--leps-soft)}
+.brand-nuri{--accent:var(--nuri);--accent-bg:var(--nuri-bg);--accent-bd:var(--nuri-bd);--accent-soft:var(--nuri-soft)}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5}
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.logo{padding:16px 16px 12px;border-bottom:1px solid var(--border)}
+.logo-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px}
+
+/* Brand switcher pills */
+.brand-pills{display:flex;flex-direction:column;gap:3px}
+.brand-pill{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--rsm);cursor:pointer;border:1px solid transparent;transition:all .15s;font-size:12.5px;font-weight:400;color:var(--text2)}
+.brand-pill:hover{background:var(--bg3)}
+.brand-pill.active{font-weight:500;color:var(--text)}
+.brand-pill.active.p-labo{background:var(--labo-soft);border-color:var(--labo-bd);color:var(--labo)}
+.brand-pill.active.p-leps{background:var(--leps-soft);border-color:var(--leps-bd);color:var(--leps)}
+.brand-pill.active.p-nuri{background:var(--nuri-soft);border-color:var(--nuri-bd);color:var(--nuri)}
+.brand-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.bd-labo{background:var(--labo)}
+.bd-leps{background:var(--leps)}
+.bd-nuri{background:var(--nuri)}
+.brand-count{margin-left:auto;font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
+
+.sb-sec{padding:12px 8px 4px}
+.sb-lbl{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:0 8px;margin-bottom:3px}
+.nav{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:var(--rsm);cursor:pointer;color:var(--text2);font-size:12px;border:none;background:none;width:100%;text-align:left;transition:all .15s}
+.nav:hover{background:var(--bg3);color:var(--text)}
+.nav.active{background:var(--bg3);color:var(--text);font-weight:500;border-left:2.5px solid var(--accent);padding-left:7px}
+.ndot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* Budget summary */
+.budget-box{margin-top:auto;padding:12px 14px;border-top:1px solid var(--border)}
+.budget-brands{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.bb-row{display:flex;align-items:center;justify-content:space-between}
+.bb-name{font-size:11px;display:flex;align-items:center;gap:5px}
+.bb-val{font-size:11px;font-family:'DM Mono',monospace;font-weight:500}
+.budget-total-row{display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)}
+.budget-total-lbl{font-size:11px;color:var(--text2)}
+.budget-total-val{font-size:16px;font-weight:600;font-family:'DM Mono',monospace}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;min-width:0}
+.panel{display:none;padding:22px 24px}
+.panel.active{display:block}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+.pt{font-size:18px;font-weight:600;letter-spacing:-.02em}
+.ps{font-size:12px;color:var(--text2);margin-top:2px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* Brand header strip */
+.brand-strip{height:4px;border-radius:2px;margin-bottom:18px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:var(--rsm);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;border:1px solid}
+.btn-p{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-p:hover{opacity:.85}
+.btn-g{background:transparent;color:var(--text2);border-color:var(--border2)}
+.btn-g:hover{background:var(--bg3);color:var(--text)}
+.btn-d{background:transparent;color:#b03030;border-color:rgba(176,48,48,.2)}
+.btn-d:hover{background:rgba(176,48,48,.06)}
+.btn-sm{padding:3px 8px;font-size:11px}
+.btn-xs{padding:2px 6px;font-size:10px}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r)}
+.ch{padding:11px 14px;border-bottom:1px solid var(--border);font-weight:500;display:flex;align-items:center;justify-content:space-between;font-size:13px;background:var(--bg3);border-radius:var(--r) var(--r) 0 0}
+
+/* FORM */
+.fg{display:grid;gap:10px;margin-bottom:10px}
+.fg2{grid-template-columns:1fr 1fr}
+.fg3{grid-template-columns:1fr 1fr 1fr}
+.fg1{grid-template-columns:1fr}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;color:var(--text2);font-weight:500}
+.field input,.field select,.field textarea{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12.5px;padding:6px 10px;outline:none;transition:border-color .15s;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--border3);background:var(--bg2)}
+.field textarea{resize:vertical;min-height:60px}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500;border:1px solid;white-space:nowrap}
+.b-ugc{background:var(--nuri-bg);color:var(--nuri);border-color:var(--nuri-bd)}
+.b-meme{background:var(--leps-bg);color:var(--leps);border-color:var(--leps-bd)}
+.b-creator{background:#fdf0e8;color:#c44d10;border-color:#f0b87a}
+.b-plan{background:#fdf8e0;color:#8a6200;border-color:#e8cc6a}
+.b-shoot{background:var(--labo-bg);color:var(--labo);border-color:var(--labo-bd)}
+.b-recruit{background:#e8f2fa;color:#1a5a90;border-color:#90bce8}
+.b-clean{background:#eef5e6;color:#4a7a28;border-color:#a8d070}
+.b-gray{background:var(--bg4);color:var(--text2);border-color:var(--border2)}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.sv{font-size:22px;font-weight:600;letter-spacing:-.03em;font-family:'DM Mono',monospace}
+.sl{font-size:11px;color:var(--text2);margin-top:2px}
+
+/* CALENDAR */
+.cal-header{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.mnav{display:flex;align-items:center;gap:7px}
+.mlbl{font-size:14px;font-weight:500;min-width:76px;text-align:center}
+.mbtn{width:26px;height:26px;background:var(--bg2);border:1px solid var(--border2);color:var(--text2);border-radius:var(--rsm);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.mbtn:hover{background:var(--accent-bg);color:var(--accent)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.ldot{width:7px;height:7px;border-radius:50%}
+
+.cal-grid{display:grid;grid-template-columns:34px repeat(7,1fr);gap:3px}
+.cal-dow{font-size:10px;color:var(--text3);text-align:center;padding:4px 0;font-weight:500}
+.wlbl{font-size:9px;color:var(--text3);display:flex;align-items:flex-start;justify-content:flex-end;padding:5px 4px 0 0}
+.cell{border-radius:8px;min-height:60px;border:1px solid var(--border);background:var(--bg2);padding:5px 6px;cursor:pointer;transition:all .15s;overflow:hidden}
+.cell:hover{border-color:var(--border2);background:var(--bg3)}
+.cell.empty{background:transparent;border-color:transparent;cursor:default}
+.cell.empty:hover{background:transparent;border-color:transparent}
+.cell.c-plan{border-color:#e8cc6a!important;background:#fdf8e0}
+.cell.c-recruit{border-color:#90bce8!important;background:#e8f2fa}
+.cell.c-shoot{border-color:var(--accent-bd)!important;background:var(--accent-bg)}
+.cell.c-today{outline:2px solid var(--accent);outline-offset:-2px}
+.cdate{font-size:10px;color:var(--text3);margin-bottom:3px;font-family:'DM Mono',monospace}
+.cell-thumb{width:100%;aspect-ratio:4/5;border-radius:5px;object-fit:cover;margin-bottom:3px;border:1px solid var(--border);display:block}
+.cell-thumb-zone{width:100%;aspect-ratio:4/5;border-radius:5px;border:1.5px dashed var(--border2);margin-bottom:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;background:var(--bg3);font-size:9px;color:var(--text3);gap:3px}
+.cell-thumb-zone:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.chip{border-radius:4px;padding:2px 5px;margin-bottom:2px;font-size:9.5px;font-weight:500;display:block;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.chip:hover{filter:brightness(.93)}
+.ch-ugc{background:var(--nuri-bg);color:var(--nuri);border:0.5px solid var(--nuri-bd)}
+.ch-meme{background:var(--leps-bg);color:var(--leps);border:0.5px solid var(--leps-bd)}
+.ch-creator{background:#fdf0e8;color:#c44d10;border:0.5px solid #f0b87a}
+.ch-plan{background:#fdf8e0;color:#8a6200;border:0.5px dashed #e8cc6a}
+.ch-shoot{background:var(--accent-bg);color:var(--accent);border:0.5px solid var(--accent-bd)}
+.ch-recruit{background:#e8f2fa;color:#1a5a90;border:0.5px dashed #90bce8}
+.ctime{font-size:9px;color:var(--text3);margin-top:1px}
+.wbar{font-size:9px;font-weight:600;text-transform:uppercase;padding:1px 4px;border-radius:3px;display:inline-block;margin-bottom:2px;letter-spacing:.04em}
+.wb-plan{background:#fdf8e0;color:#8a6200;border:0.5px solid #e8cc6a}
+.wb-recruit{background:#e8f2fa;color:#1a5a90;border:0.5px solid #90bce8}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:8px 11px;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--bg3)}
+td{padding:8px 11px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg3)}
+td.tdn{color:var(--text);font-weight:400}
+td a{color:var(--nuri);text-decoration:none;font-size:10.5px}
+td a:hover{text-decoration:underline}
+.stars{display:flex;gap:2px}
+.star{width:7px;height:7px;border-radius:50%}
+.star.on{background:#8a6200}
+.star.off{background:var(--bg4);border:1px solid var(--border2)}
+.tbl-thumb{width:42px;height:34px;border-radius:4px;object-fit:cover;border:1px solid var(--border);display:block}
+.tbl-thumb-upload{width:42px;height:34px;border-radius:4px;border:1.5px dashed var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--text3);transition:all .15s}
+.tbl-thumb-upload:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.clean-mark{font-size:9px;font-weight:600;padding:1px 5px;border-radius:3px;background:var(--clean-bg,#eef5e6);color:#4a7a28;border:0.5px solid #a8d070;margin-right:3px}
+
+/* UGC TABS */
+.tab-row{display:flex;gap:2px;margin-bottom:14px;background:var(--bg3);padding:3px;border-radius:9px;width:fit-content;border:1px solid var(--border)}
+.tab-btn{padding:5px 13px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text2);transition:all .15s}
+.tab-btn.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid var(--border)}
+
+/* PASTE ZONE */
+.paste-zone{border:2px dashed var(--border2);border-radius:var(--r);padding:18px 16px;text-align:center;transition:all .2s;color:var(--text3);cursor:pointer}
+.paste-zone:focus{outline:none;border-color:var(--accent);background:var(--accent-bg)}
+.paste-zone.has-img{border-style:solid;border-color:var(--border2)}
+.paste-zone .pz-hint{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:2px}
+.paste-zone .pz-sub{font-size:11px;color:var(--text3)}
+.paste-zone kbd{background:var(--bg4);border:1px solid var(--border2);border-radius:4px;padding:1px 5px;font-size:10px;font-family:'DM Mono',monospace;color:var(--text2)}
+.pz-preview{width:100%;border-radius:6px;max-height:150px;object-fit:cover;border:1px solid var(--border);display:block;margin-bottom:8px}
+
+/* MODAL */
+.ov{display:none;position:fixed;inset:0;background:rgba(42,24,32,.42);z-index:200;align-items:center;justify-content:center;padding:16px}
+.ov.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);width:580px;max-width:100%;max-height:90vh;overflow-y:auto;animation:mdin .18s ease;box-shadow:0 8px 40px rgba(0,0,0,.1)}
+.modal-lg{width:740px}
+@keyframes mdin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.mh{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-weight:500;font-size:14px;background:var(--bg3)}
+.mb2{padding:16px}
+.mf{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:7px;justify-content:flex-end;background:var(--bg3)}
+.xbtn{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:1px 5px;border-radius:4px;line-height:1}
+.xbtn:hover{color:var(--text);background:var(--bg4)}
+
+/* DAY POPUP */
+.slot-pop{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:10px}
+.sp-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}
+.sp-lbl{font-size:11px;color:var(--text3);min-width:70px;flex-shrink:0;padding-top:1px}
+.sp-val{font-size:12px;color:var(--text);word-break:break-all;line-height:1.5}
+.sp-val a{color:var(--nuri)}
+.pop-thumb-wrap{width:100%;border-radius:7px;overflow:hidden;margin-bottom:10px;border:1px solid var(--border);background:var(--bg4);min-height:60px;display:flex;align-items:center;justify-content:center}
+.pop-thumb{width:100%;max-height:200px;object-fit:cover;display:block}
+
+/* SHOOT CARD */
+.shoot-cr-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:9px 12px;margin-bottom:5px}
+
+/* CREATOR */
+.cr-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
+.cr-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;transition:all .15s}
+.cr-card:hover{border-color:var(--border2)}
+.cr-name{font-size:14px;font-weight:500}
+.cr-handle{font-size:11px;color:var(--text2);margin-top:1px}
+.cr-links{display:flex;gap:5px;margin:7px 0;flex-wrap:wrap}
+.cr-link{display:inline-flex;align-items:center;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:500;background:var(--bg3);color:var(--text2);border:1px solid var(--border);text-decoration:none;transition:all .15s}
+.cr-link:hover{color:var(--accent);border-color:var(--accent-bd);background:var(--accent-bg)}
+.cr-fee{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:#c44d10}
+
+/* MISC */
+.empty{text-align:center;padding:32px 20px;color:var(--text3);font-size:12px}
+.empty .ei{font-size:24px;margin-bottom:8px}
+.used-tag{font-size:10px;padding:1px 5px;border-radius:3px;background:var(--bg3);color:var(--text2);border:0.5px solid var(--border2);margin-right:3px;margin-bottom:2px;display:inline-block}
+.search-bar{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rsm);padding:6px 10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;width:180px}
+.search-bar:focus{border-color:var(--border3)}
+select.fsel{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rsm);padding:5px 8px;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:11.5px;outline:none;cursor:pointer}
+
+/* CONTEXT MENU */
+.ctx-menu{position:fixed;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:500;min-width:150px;padding:4px;animation:mdin .12s ease}
+.ctx-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--rsm);font-size:12.5px;cursor:pointer;color:var(--text);transition:background .1s;border:none;background:none;width:100%;text-align:left}
+.ctx-item:hover{background:var(--bg3)}
+.ctx-item.danger{color:#b03030}
+.ctx-item.danger:hover{background:rgba(176,48,48,.07)}
+.ctx-divider{height:1px;background:var(--border);margin:3px 0}
+
+.acc-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-bd);border-radius:20px;font-size:11px;font-weight:500}
+.acc-tag button{background:none;border:none;cursor:pointer;color:var(--accent);font-size:12px;padding:0;line-height:1;opacity:.7}
+.acc-tag button:hover{opacity:1}
+.import-zone{border:2px dashed var(--border2);border-radius:var(--r);padding:24px;text-align:center;cursor:pointer;transition:all .2s;color:var(--text3)}
+.import-zone:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-title">콘텐츠 통합 캘린더</div>
+    <div class="brand-pills">
+      <div class="brand-pill p-labo active" onclick="switchBrand('labo')">
+        <div class="brand-dot bd-labo"></div>
+        Laboreve
+        <span class="brand-count" id="cnt-labo">0</span>
+      </div>
+      <div class="brand-pill p-leps" onclick="switchBrand('leps')">
+        <div class="brand-dot bd-leps"></div>
+        LEPS
+        <span class="brand-count" id="cnt-leps">0</span>
+      </div>
+      <div class="brand-pill p-nuri" onclick="switchBrand('nuri')">
+        <div class="brand-dot bd-nuri"></div>
+        Nuriglow
+        <span class="brand-count" id="cnt-nuri">0</span>
+      </div>
+    </div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl">메뉴</div>
+    <button class="nav active" data-p="calendar"><div class="ndot" style="background:var(--leps)"></div>캘린더</button>
+    <button class="nav" data-p="ugc"><div class="ndot" style="background:var(--nuri)"></div>UGC 클립</button>
+    <button class="nav" data-p="creators"><div class="ndot" style="background:#c44d10"></div>크리에이터</button>
+    <button class="nav" data-p="budget"><div class="ndot" style="background:#8a6200"></div>예산</button>
+  </div>
+  <div class="budget-box">
+    <div class="budget-brands" id="sidebar-brand-budgets"></div>
+    <div class="budget-total-row">
+      <span class="budget-total-lbl">3개 브랜드 합산</span>
+      <span class="budget-total-val" id="sidebar-grand-total">₩0</span>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- CALENDAR -->
+<div class="panel active" id="panel-calendar">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:10px">
+    <div>
+      <div class="pt" id="cal-brand-title">Laboreve 캘린더</div>
+      <div class="ps">5월–7월 · 10:00 KST = 뉴욕 9pm ET</div>
+    </div>
+    <div class="row">
+      <div class="mnav">
+        <button class="mbtn" id="prev-m">‹</button>
+        <div class="mlbl" id="m-lbl"></div>
+        <button class="mbtn" id="next-m">›</button>
+      </div>
+      <button class="btn btn-p" id="btn-add-slot">+ 슬롯 추가</button>
+    </div>
+  </div>
+  <div class="brand-strip" id="brand-strip"></div>
+  <div id="legend-wrap" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+    <div id="legend-items" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"></div>
+    <button onclick="openLegendModal()" style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1px dashed var(--border2);background:transparent;color:var(--text2)">+ 범례 추가</button>
+  </div>
+  <div id="cal-wrap"></div>
+</div>
+
+<!-- UGC -->
+<div class="panel" id="panel-ugc">
+  <div class="ph">
+    <div>
+      <div class="pt" id="ugc-brand-title">Laboreve UGC</div>
+      <div class="ps">총 <span id="ugc-cnt">0</span>개</div>
+    </div>
+    <div class="row">
+      <input class="search-bar" id="ugc-search" placeholder="검색...">
+      <select class="fsel" id="ugc-f-used"><option value="">전체</option><option value="no">미사용</option><option value="yes">사용됨</option><option value="editing">편집중</option></select>
+      <button class="btn btn-g" id="btn-import">CSV 가져오기</button>
+      <button class="btn btn-p" id="btn-add-ugc">+ 클립 추가</button>
+    </div>
+  </div>
+  <div class="stats" id="ugc-stats"></div>
+  <div class="tab-row" id="ugc-tabs">
+    <button class="tab-btn active" data-tab="all">전체</button>
+    <button class="tab-btn" data-tab="original">원본</button>
+    <button class="tab-btn" data-tab="clean">클린본</button>
+    <button class="tab-btn" data-tab="seed">시딩 클린본</button>
+  </div>
+  <div class="card">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:30px">#</th>
+          <th style="width:44px">썸네일</th>
+          <th>클립 ID</th>
+          <th>콘텐츠 유형</th>
+          <th>퀄리티</th>
+          <th>드라이브</th>
+          <th>사용</th>
+          <th>사용 계정</th>
+          <th>예정일</th>
+          <th>메모</th>
+          <th style="width:56px"></th>
+        </tr></thead>
+        <tbody id="ugc-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- CREATORS -->
+<div class="panel" id="panel-creators">
+  <div class="ph">
+    <div><div class="pt" id="cr-brand-title">Laboreve 크리에이터</div><div class="ps">섭외 현황 · 비용 · 링크</div></div>
+    <button class="btn btn-p" id="btn-add-cr">+ 크리에이터 추가</button>
+  </div>
+  <div class="stats" id="cr-stats"></div>
+  <div class="cr-grid" id="cr-list"><div class="empty"><div class="ei">🎬</div>크리에이터를 추가해보세요</div></div>
+</div>
+
+<!-- BUDGET -->
+<div class="panel" id="panel-budget">
+  <div class="ph">
+    <div><div class="pt" id="budget-brand-title">Laboreve 예산</div><div class="ps">크리에이터 + 기타 비용</div></div>
+    <button class="btn btn-p" id="btn-add-exp">+ 기타 비용 추가</button>
+  </div>
+  <div class="stats" id="budget-stats"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px">
+    <div class="card"><div class="ch">크리에이터 비용</div>
+      <table><thead><tr><th>이름</th><th>촬영일</th><th>비용</th><th>상태</th></tr></thead>
+      <tbody id="b-cr"></tbody></table></div>
+    <div class="card"><div class="ch">기타 비용</div>
+      <table><thead><tr><th>항목</th><th>월</th><th>비용</th><th></th></tr></thead>
+      <tbody id="b-exp"></tbody></table></div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- MODALS -->
+
+<!-- Day popup -->
+<div class="ov" id="ov-day">
+  <div class="modal modal-lg">
+    <div class="mh"><span id="day-title">날짜 상세</span><button class="xbtn" data-close="ov-day">×</button></div>
+    <div class="mb2" id="day-body"></div>
+    <div class="mf">
+      <button class="btn btn-g" data-close="ov-day">닫기</button>
+      <button class="btn btn-p" id="day-add-btn">+ 이 날 슬롯 추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- Slot edit -->
+<div class="ov" id="ov-slot">
+  <div class="modal">
+    <div class="mh"><span id="slot-modal-title">슬롯 추가</span><button class="xbtn" data-close="ov-slot">×</button></div>
+    <div class="mb2">
+      <div class="fg fg2">
+        <div class="field"><label>날짜</label><input type="date" id="s-date"></div>
+        <div class="field"><label>유형</label>
+          <select id="s-type">
+            <option value="ugc">UGC</option><option value="meme">텍스트 밈 릴스</option>
+            <option value="creator">크리에이터 릴스</option><option value="plan">기획 주간</option>
+            <option value="recruit">섭외 주간</option><option value="shoot">촬영일</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg fg1"><div class="field"><label>제목</label><input type="text" id="s-title-val"></div></div>
+      <div class="fg fg2">
+        <div class="field"><label>유형 커스텀 (직접 입력)</label><input type="text" id="s-type-custom" placeholder="예: GRWM, 밈, 클로즈업"></div>
+        <div class="field"><label>업로드 시간</label><input type="time" id="s-time" value="10:00"></div>
+      </div>
+      <div class="fg fg1"><div class="field"><label>내용 (캘린더에 표시)</label><input type="text" id="s-content" placeholder="예: 아침 루틴, 세럼 언박싱"></div></div>
+      <div class="fg fg2">
+        <div class="field"><label>레퍼런스 링크</label><input type="url" id="s-ref" placeholder="https://..."></div>
+        <div class="field"><label>제품</label><input type="text" id="s-product" placeholder="예: PDRN 토너"></div>
+      </div>
+      <div class="fg fg1"><div class="field"><label>연결 UGC 클립 ID (선택)</label><input type="text" id="s-ugcid"></div></div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:11px;color:var(--text2);font-weight:500;margin-bottom:6px">썸네일 이미지</div>
+        <div class="paste-zone" id="slot-paste-zone" tabindex="0">
+          <img id="slot-thumb-img" class="pz-preview" style="display:none">
+          <div id="slot-paste-hint">
+            <div style="font-size:20px;margin-bottom:5px">📋</div>
+            <div class="pz-hint">캡처 후 <kbd>Ctrl+V</kbd> / <kbd>Cmd+V</kbd> 붙여넣기</div>
+            <div class="pz-sub" style="margin-top:3px">또는 클릭해서 파일 선택 · 드래그 앤 드롭</div>
+          </div>
+          <div id="slot-paste-actions" style="display:none;margin-top:6px">
+            <button class="btn btn-d btn-xs" type="button" onclick="clearSlotThumb(event)">이미지 제거</button>
+          </div>
+        </div>
+        <input type="file" id="slot-thumb-file" accept="image/*" style="display:none">
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-g" data-close="ov-slot">취소</button>
+      <button class="btn btn-p" id="save-slot-btn">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shoot Day -->
+<div class="ov" id="ov-shoot">
+  <div class="modal modal-lg">
+    <div class="mh"><span id="shoot-modal-title">촬영일 설정</span><button class="xbtn" data-close="ov-shoot">×</button></div>
+    <div class="mb2">
+      <div class="fg fg2">
+        <div class="field"><label>날짜</label><input type="date" id="sh-date"></div>
+        <div class="field"><label>촬영 시작 시간</label><input type="time" id="sh-time" value="09:30"></div>
+      </div>
+      <div class="fg fg2">
+        <div class="field"><label>촬영 장소</label><input type="text" id="sh-location" placeholder="예: 누리라운지 3층 스튜디오"></div>
+        <div class="field"><label>담당 인턴 / 감독</label><input type="text" id="sh-director" placeholder="예: 김인턴"></div>
+      </div>
+      <div class="fg fg1"><div class="field"><label>메모 / 준비물</label><textarea id="sh-memo"></textarea></div></div>
+      <div>
+        <div style="font-size:11px;font-weight:500;color:var(--text2);margin-bottom:8px">참여 크리에이터</div>
+        <div id="sh-creator-list" style="display:flex;flex-direction:column;gap:5px"></div>
+        <div id="sh-no-creators" style="font-size:12px;color:var(--text3);padding:8px 0;display:none">크리에이터 탭에서 먼저 추가해주세요</div>
+      </div>
+      <div id="sh-selected-summary" style="display:none;margin-top:10px">
+        <div id="sh-summary-cards"></div>
+        <div style="margin-top:8px;padding:9px 12px;background:#fdf8e0;border:1px solid #e8cc6a;border-radius:var(--rsm);display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:11px;color:#8a6200">합산 비용</span>
+          <span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:600;color:#8a6200" id="sh-total-fee">₩0</span>
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-g" data-close="ov-shoot">취소</button>
+      <button class="btn btn-p" id="save-shoot-btn">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- UGC edit -->
+<div class="ov" id="ov-ugc">
+  <div class="modal modal-lg">
+    <div class="mh"><span id="ugc-modal-title">UGC 클립 추가</span><button class="xbtn" data-close="ov-ugc">×</button></div>
+    <div class="mb2">
+      <div class="fg fg1">
+        <div class="field"><label>클립 ID</label><input type="text" id="u-id"></div>
+      </div>
+      <div class="fg fg2">
+        <div class="field"><label>콘텐츠 유형</label><input type="text" id="u-type"></div>
+        <div class="field"><label>퀄리티 (1–5)</label>
+          <select id="u-q"><option value="1">★☆☆☆☆</option><option value="2">★★☆☆☆</option><option value="3" selected>★★★☆☆</option><option value="4">★★★★☆</option><option value="5">★★★★★</option></select>
+        </div>
+      </div>
+      <div class="fg fg1"><div class="field"><label>구글 드라이브 링크</label><input type="url" id="u-drive"></div></div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:11px;color:var(--text2);font-weight:500;margin-bottom:6px">썸네일 (캡처 붙여넣기)</div>
+        <div class="paste-zone" id="ugc-paste-zone" tabindex="0">
+          <img id="ugc-thumb-img" class="pz-preview" style="display:none">
+          <div id="ugc-paste-hint">
+            <div style="font-size:20px;margin-bottom:5px">📋</div>
+            <div class="pz-hint"><kbd>Ctrl+V</kbd> 붙여넣기 또는 클릭/드래그</div>
+          </div>
+          <div id="ugc-paste-actions" style="display:none;margin-top:6px">
+            <button class="btn btn-d btn-xs" type="button" onclick="clearUgcThumb(event)">제거</button>
+          </div>
+        </div>
+        <input type="file" id="ugc-thumb-file" accept="image/*" style="display:none">
+      </div>
+      <div class="fg fg2">
+        <div class="field"><label>사용 여부</label>
+          <select id="u-used"><option value="no">미사용</option><option value="yes">사용됨</option><option value="editing">편집중</option></select>
+        </div>
+        <div class="field"><label>사용 계정 (엔터로 추가)</label>
+          <div id="acc-tags-wrap" style="display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);min-height:36px;cursor:text" onclick="document.getElementById('acc-tag-input').focus()">
+            <div id="acc-tags" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+            <input type="text" id="acc-tag-input" placeholder="계정 입력 후 엔터..." style="border:none;background:none;outline:none;font-size:12px;font-family:'DM Sans',sans-serif;min-width:120px;color:var(--text)">
+          </div>
+        </div>
+      </div>
+      <div class="fg fg2">
+        <div class="field"><label>업로드 예정일</label><input type="date" id="u-date"></div>
+        <div class="field"><label>제품 링크</label><input type="url" id="u-product"></div>
+      </div>
+      <div class="fg fg1"><div class="field"><label>메모</label><textarea id="u-memo"></textarea></div></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-g" data-close="ov-ugc">취소</button>
+      <button class="btn btn-p" id="save-ugc-btn">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- CSV Import -->
+<div class="ov" id="ov-import">
+  <div class="modal">
+    <div class="mh">CSV 가져오기<button class="xbtn" data-close="ov-import">×</button></div>
+    <div class="mb2">
+      <div class="import-zone" id="import-zone">
+        <div style="font-size:24px;margin-bottom:8px">📂</div>
+        <div style="font-size:13px;font-weight:500;margin-bottom:3px">CSV 파일 드래그 or 클릭</div>
+        <div style="font-size:11px;color:var(--text3)">컬럼: id, handle, contentType, quality, driveLink, used, usedAccount, date, memo</div>
+      </div>
+      <input type="file" id="csv-input" accept=".csv" style="display:none">
+      <div id="import-preview" style="margin-top:10px"></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-g" data-close="ov-import">취소</button>
+      <button class="btn btn-p" id="confirm-import" style="display:none">가져오기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Creator edit -->
+<div class="ov" id="ov-cr">
+  <div class="modal">
+    <div class="mh"><span id="cr-modal-title">크리에이터 추가</span><button class="xbtn" data-close="ov-cr">×</button></div>
+    <div class="mb2">
+      <div class="fg fg2">
+        <div class="field"><label>이름</label><input type="text" id="c-name"></div>
+        <div class="field"><label>핸들</label><input type="text" id="c-handle"></div>
+      </div>
+      <div class="fg fg2">
+        <div class="field"><label>인스타그램 URL</label><input type="url" id="c-ig"></div>
+        <div class="field"><label>틱톡 URL</label><input type="url" id="c-tt"></div>
+      </div>
+      <div class="fg fg3">
+        <div class="field"><label>상태</label>
+          <select id="c-status"><option value="new">미접촉</option><option value="contact">연락중</option><option value="confirmed">확정</option><option value="done">완료</option></select>
+        </div>
+        <div class="field"><label>촬영 예정일</label><input type="date" id="c-date"></div>
+        <div class="field"><label>비용 (₩)</label><input type="number" id="c-fee" min="0"></div>
+      </div>
+      <div class="fg fg1"><div class="field"><label>콘텐츠 유형</label><input type="text" id="c-content"></div></div>
+      <div class="fg fg1"><div class="field"><label>메모</label><textarea id="c-memo"></textarea></div></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-g" data-close="ov-cr">취소</button>
+      <button class="btn btn-p" id="save-cr-btn">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Expense -->
+<div class="ov" id="ov-exp">
+  <div class="modal" style="width:400px">
+    <div class="mh">기타 비용 추가<button class="xbtn" data-close="ov-exp">×</button></div>
+    <div class="mb2">
+      <div class="fg fg2">
+        <div class="field"><label>항목</label><input type="text" id="e-name"></div>
+        <div class="field"><label>월</label>
+          <select id="e-month"><option value="5월">5월</option><option value="6월">6월</option><option value="7월">7월</option><option value="매월">매월</option></select>
+        </div>
+      </div>
+      <div class="fg fg1"><div class="field"><label>비용 (₩)</label><input type="number" id="e-amount" min="0"></div></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-g" data-close="ov-exp">취소</button>
+      <button class="btn btn-p" id="save-exp-btn">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+/* ════ SUPABASE ════ */
+const SUPABASE_URL = 'https://lndtrhoqkjmoorhcvxyq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxuZHRyaG9xa2ptb29yaGN2eHlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MjI2MjQsImV4cCI6MjA5MDk5ODYyNH0.-axQ5geQFEtLxRC33avGFC4K5oioovqb_qMhkVCA_jw';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── DB helpers ──
+async function dbSave(table, row) {
+  const { error } = await db.from(table).upsert(row, {onConflict:'id'});
+  if(error) console.error('save error', table, error);
+}
+async function dbDelete(table, id) {
+  const { error } = await db.from(table).delete().eq('id', id);
+  if(error) console.error('delete error', table, error);
+}
+async function dbLoadAll() {
+  const [s, u, cr, ex] = await Promise.all([
+    db.from('slots').select('*'),
+    db.from('ugc_clips').select('*'),
+    db.from('creators').select('*'),
+    db.from('expenses').select('*'),
+  ]);
+  return { slots: s.data||[], ugc: u.data||[], creators: cr.data||[], expenses: ex.data||[] };
+}
+
+// ── Row converters: DB → app ──
+function slotFromDB(r) {
+  return { _id:r.id, date:r.date||'', type:r.type||'ugc', title:r.title||'',
+    time:r.time||'', ref:r.ref||'', thumb:r.thumb||'', ugcId:r.ugc_id||'',
+    shootLocation:r.shoot_location||'', shootDirector:r.shoot_director||'',
+    shootCreators:r.shoot_creators||[], memo:r.memo||'', content:r.content||'', product:r.product||'', typeCustom:r.type_custom||'' };
+}
+function slotToDB(s, brand) {
+  return { id:s._id, brand, date:s.date, type:s.type, title:s.title, time:s.time,
+    ref:s.ref, thumb:s.thumb, ugc_id:s.ugcId, shoot_location:s.shootLocation,
+    shoot_director:s.shootDirector, shoot_creators:s.shootCreators, memo:s.memo, content:s.content||'', product:s.product||'', type_custom:s.typeCustom||'' };
+}
+function ugcFromDB(r) {
+  return { _id:r.id, id:r.internal_id||r.id, h:r.handle||'', ct:r.content_type||'',
+    q:r.quality||3, drive:r.drive_link||'', thumb:r.thumb||'', used:r.used||'no',
+    acc:r.used_account||'', date:r.scheduled_date||'', product:r.product_link||'',
+    memo:r.memo||'', cl:r.is_clean||false, seed:r.is_seed||false };
+}
+function ugcToDB(u, brand) {
+  return { id:u._id, brand, internal_id:u.id, handle:u.h, content_type:u.ct,
+    quality:u.q, drive_link:u.drive, thumb:u.thumb, used:u.used,
+    used_account:u.acc, scheduled_date:u.date, product_link:u.product,
+    memo:u.memo, is_clean:u.cl, is_seed:u.seed };
+}
+function crFromDB(r) {
+  return { _id:r.id, name:r.name||'', handle:r.handle||'', ig:r.ig_url||'',
+    tt:r.tt_url||'', status:r.status||'new', date:r.shoot_date||'',
+    fee:r.fee||0, content:r.content_type||'', memo:r.memo||'' };
+}
+function crToDB(c, brand) {
+  return { id:c._id, brand, name:c.name, handle:c.handle, ig_url:c.ig,
+    tt_url:c.tt, status:c.status, shoot_date:c.date, fee:c.fee,
+    content_type:c.content, memo:c.memo };
+}
+function expFromDB(r) {
+  return { _id:r.id, name:r.name||'', month:r.month||'매월', amount:r.amount||0 };
+}
+function expToDB(e, brand) {
+  return { id:e._id, brand, name:e.name, month:e.month, amount:e.amount };
+}
+
+// ── Load from DB into S.data ──
+async function loadFromDB() {
+  try {
+    const { slots, ugc, creators, expenses } = await dbLoadAll();
+    // Clear and repopulate
+    ['labo','leps','nuri'].forEach(b=>{
+      S.data[b].slots = slots.filter(r=>r.brand===b).map(slotFromDB);
+      S.data[b].ugc = ugc.filter(r=>r.brand===b).map(ugcFromDB);
+      S.data[b].creators = creators.filter(r=>r.brand===b).map(crFromDB);
+      S.data[b].expenses = expenses.filter(r=>r.brand===b).map(expFromDB);
+    });
+    // Data loaded from Supabase successfully
+  } catch(e) { console.error('loadFromDB error', e); }
+}
+
+async function seedDefaultData() {
+  // Everything starts empty — no auto-seeding
+  ['labo','leps','nuri'].forEach(b=>{
+    S.data[b].slots=[];
+    S.data[b].ugc=[];
+    S.data[b].expenses=[];
+  });
+  console.log('Starting fresh — all data empty.');
+}
+
+// ── Real-time sync (slots only — lightweight) ──
+function setupRealtime() {
+  db.channel('content-planner-slots')
+    .on('postgres_changes', {event:'*', schema:'public', table:'slots'}, async (payload) => {
+      // 내가 방금 저장한 건 무시 (로컬에 이미 반영됨)
+      const brand = payload.new?.brand || payload.old?.brand;
+      if(!brand) return;
+      // 해당 브랜드 슬롯만 다시 로드
+      const {data} = await db.from('slots').select('*').eq('brand', brand);
+      if(data) S.data[brand].slots = data.map(slotFromDB);
+      if(S.brand === brand) renderCurrentPanel();
+      updateSidebar();
+    })
+    .subscribe();
+}
+
+/* ════ BRAND CONFIG ════ */
+const BRANDS = {
+  labo: {name:'Laboreve', color:'#c8306a', bgColor:'#faedf3', bdColor:'#e898c0', softColor:'#fdf0f6'},
+  leps: {name:'LEPS',     color:'#5030b8', bgColor:'#eeeafa', bdColor:'#b8a8ef', softColor:'#f4f0fd'},
+  nuri: {name:'Nuriglow', color:'#0a7050', bgColor:'#e8f5f1', bdColor:'#9dd8c8', softColor:'#f0faf7'},
+};
+
+/* ════ STATE ════ */
+const S = {
+  brand: 'labo',
+  curM: new Date().getMonth(), curY: new Date().getFullYear(),
+  data: { labo:{slots:[],ugc:[],creators:[],expenses:[]}, leps:{slots:[],ugc:[],creators:[],expenses:[]}, nuri:{slots:[],ugc:[],creators:[],expenses:[]} },
+  editSlotId:null, editUgcId:null, editCrId:null, dayDate:null, importRows:[],
+  ugcTab:'all', slotThumbData:null, ugcThumbData:null,
+};
+const gid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const bd = () => S.data[S.brand];
+
+/* ════ BRAND SWITCH ════ */
+function switchBrand(b) {
+  S.brand = b;
+  document.querySelectorAll('.brand-pill').forEach(p => p.classList.remove('active'));
+  document.querySelector('.brand-pill.p-'+b).classList.add('active');
+  const cfg = BRANDS[b];
+  const root = document.documentElement.style;
+  root.setProperty('--accent', cfg.color);
+  root.setProperty('--accent-bg', cfg.bgColor);
+  root.setProperty('--accent-bd', cfg.bdColor);
+  root.setProperty('--accent-soft', cfg.softColor);
+  document.getElementById('brand-strip').style.background = cfg.color;
+  const legShoot = document.getElementById('leg-shoot-dot');
+  if(legShoot) legShoot.style.background = cfg.color;
+  ['cal-brand-title','ugc-brand-title','cr-brand-title','budget-brand-title'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = cfg.name + ' ' + el.textContent.split(' ').slice(1).join(' ');
+  });
+  updateBrandTitles();
+  renderCurrentPanel();
+  updateSidebar();
+}
+
+function updateBrandTitles(){
+  const n = BRANDS[S.brand].name;
+  document.getElementById('cal-brand-title').textContent = n + ' 캘린더';
+  document.getElementById('ugc-brand-title').textContent = n + ' UGC';
+  document.getElementById('cr-brand-title').textContent = n + ' 크리에이터';
+  document.getElementById('budget-brand-title').textContent = n + ' 예산';
+}
+
+function renderCurrentPanel(){
+  const active = document.querySelector('.panel.active');
+  if(!active) return;
+  const id = active.id.replace('panel-','');
+  ({calendar:renderCal, ugc:renderUGC, creators:renderCreators, budget:renderBudget})[id]?.();
+}
+
+
+/* ════ THUMB HELPERS ════ */
+function readFile(f){return new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(f);})}
+function applyThumbSlot(data){
+  S.slotThumbData=data;
+  const img=document.getElementById('slot-thumb-img');img.src=data;img.style.display='block';
+  document.getElementById('slot-paste-hint').style.display='none';
+  document.getElementById('slot-paste-actions').style.display='';
+  document.getElementById('slot-paste-zone').classList.add('has-img');
+}
+function applyThumbUgc(data){
+  S.ugcThumbData=data;
+  const img=document.getElementById('ugc-thumb-img');img.src=data;img.style.display='block';
+  document.getElementById('ugc-paste-hint').style.display='none';
+  document.getElementById('ugc-paste-actions').style.display='';
+  document.getElementById('ugc-paste-zone').classList.add('has-img');
+}
+function clearSlotThumb(e){if(e)e.stopPropagation();S.slotThumbData=null;document.getElementById('slot-thumb-img').style.display='none';document.getElementById('slot-paste-hint').style.display='';document.getElementById('slot-paste-actions').style.display='none';document.getElementById('slot-paste-zone').classList.remove('has-img');}
+function clearUgcThumb(e){if(e)e.stopPropagation();S.ugcThumbData=null;document.getElementById('ugc-thumb-img').style.display='none';document.getElementById('ugc-paste-hint').style.display='';document.getElementById('ugc-paste-actions').style.display='none';document.getElementById('ugc-paste-zone').classList.remove('has-img');}
+function setupPasteZone(zId,fId,applyFn){
+  const z=document.getElementById(zId),fi=document.getElementById(fId);
+  z.addEventListener('click',e=>{if(e.target.tagName==='BUTTON')return;fi.click();});
+  fi.addEventListener('change',async e=>{const f=e.target.files[0];if(f)applyFn(await readFile(f));fi.value='';});
+  z.addEventListener('dragover',e=>{e.preventDefault();z.style.borderColor='var(--accent)'});
+  z.addEventListener('dragleave',()=>z.style.borderColor='');
+  z.addEventListener('drop',async e=>{e.preventDefault();z.style.borderColor='';const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))applyFn(await readFile(f));});
+}
+document.addEventListener('paste',async e=>{
+  const img=Array.from(e.clipboardData?.items||[]).find(i=>i.type.startsWith('image/'));
+  if(!img)return;
+  const data=await readFile(img.getAsFile());
+  if(document.getElementById('ov-slot').classList.contains('open'))applyThumbSlot(data);
+  else if(document.getElementById('ov-ugc').classList.contains('open'))applyThumbUgc(data);
+  else if(document.getElementById('ov-day').classList.contains('open')&&S.dayDate){
+    const s=bd().slots.find(x=>x.date===S.dayDate&&!['plan','recruit'].includes(x.type));
+    if(s){s.thumb=data;renderCal();openDayPop(S.dayDate);}
+  }
+});
+setupPasteZone('slot-paste-zone','slot-thumb-file',applyThumbSlot);
+setupPasteZone('ugc-paste-zone','ugc-thumb-file',applyThumbUgc);
+function openCellThumb(slotId,e){
+  e.stopPropagation();
+  const inp=document.createElement('input');inp.type='file';inp.accept='image/*';
+  inp.onchange=async ev=>{const f=ev.target.files[0];if(!f)return;const data=await readFile(f);const s=bd().slots.find(x=>x._id===slotId);if(s){s.thumb=data;dbSave('slots',slotToDB(s,S.brand));renderCal();}};
+  inp.click();
+}
+async function uploadThumbForSlot(slotId,input){
+  const f=input.files[0];if(!f)return;
+  const data=await readFile(f);
+  const s=bd().slots.find(x=>x._id===slotId);
+  if(s){s.thumb=data;dbSave('slots',slotToDB(s,S.brand));renderCal();if(S.dayDate)openDayPop(S.dayDate);}
+}
+
+/* ════ NAV ════ */
+document.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById('panel-'+b.dataset.p).classList.add('active');
+  ({calendar:renderCal,ugc:renderUGC,creators:renderCreators,budget:renderBudget})[b.dataset.p]?.();
+}));
+
+/* ════ MODALS ════ */
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeOv(b.dataset.close)));
+document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)closeOv(o.id)}));
+const openOv=id=>document.getElementById(id).classList.add('open');
+const closeOv=id=>document.getElementById(id).classList.remove('open');
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.ov.open').forEach(o=>closeOv(o.id));}});
+
+/* ════ CALENDAR ════ */
+const ML=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+document.getElementById('prev-m').addEventListener('click',()=>{
+  if(S.curM===0){if(S.curY>2025){S.curM=11;S.curY--;renderCal();}}
+  else{S.curM--;renderCal();}
+});
+document.getElementById('next-m').addEventListener('click',()=>{
+  if(S.curM===11){if(S.curY<2027){S.curM=0;S.curY++;renderCal();}}
+  else{S.curM++;renderCal();}
+});
+
+function thumbFor(s){
+  if(s.thumb)return s.thumb;
+  if(s.ugcId){const u=bd().ugc.find(x=>x.id===s.ugcId);if(u&&u.thumb)return u.thumb;}
+  return null;
+}
+function tlbl(t){return{ugc:'UGC',meme:'텍스트 밈',creator:'크리에이터 릴스',plan:'기획',recruit:'섭외',shoot:'촬영일'}[t]||t;}
+function calcNY(t){if(!t)return'';const[h,mn]=t.split(':').map(Number);let nh=(h-13+24)%24;const ap=nh>=12?'pm':'am';return`${nh%12||12}:${String(mn).padStart(2,'0')} ${ap}`;}
+
+function renderCal(){
+  const m=S.curM,y=S.curY,slots=bd().slots;
+  document.getElementById('m-lbl').textContent=ML[m]+' '+y;
+  const rawFd=new Date(y,m,1).getDay(),fd=(rawFd+6)%7,dim=new Date(y,m+1,0).getDate(),today=new Date();
+  let cells=[];for(let i=0;i<fd;i++)cells.push(null);for(let d=1;d<=dim;d++)cells.push(d);while(cells.length%7)cells.push(null);
+  let h='<div class="cal-grid"><div></div>'+['월','화','수','목','금','토','일'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for(let w=0;w<cells.length/7;w++){
+    const wk=cells.slice(w*7,w*7+7);
+    h+=`<div class="wlbl">W${w+1}</div>`;
+    wk.forEach(day=>{
+      if(!day){h+='<div class="cell empty"></div>';return;}
+      const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const slts=slots.filter(s=>s.date===ds);
+      const isToday=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===day;
+      const hasPlan=slts.some(s=>s.type==='plan'),hasRec=slts.some(s=>s.type==='recruit'),hasShoot=slts.some(s=>s.type==='shoot');
+      let cls='cell';
+      if(hasPlan)cls+=' c-plan';else if(hasRec)cls+=' c-recruit';
+      if(hasShoot)cls+=' c-shoot';if(isToday)cls+=' c-today';
+      const upSlts=slts.filter(s=>!['plan','recruit'].includes(s.type));
+      const ft=upSlts.length?thumbFor(upSlts[0]):null;
+      let inner=`<div class="cdate">${day}</div>`;
+      if(ft){
+        inner+=`<img class="cell-thumb" src="${ft}" alt="">`;
+      } else if(upSlts.length){
+        inner+=`<div class="cell-thumb-zone" onclick="openCellThumb('${upSlts[0]._id}',event)"><span style="font-size:13px">📋</span><span>Ctrl+V 또는 클릭</span></div>`;
+      }
+      slts.forEach(s=>{
+        if(s.type==='plan'||s.type==='recruit')inner+=`<div class="wbar wb-${s.type}">${s.type==='plan'?'기획':'섭외'}</div>`;
+        else{
+        const dispType=s.typeCustom||tlbl(s.type);
+        let extra='';
+        if(s.content)extra+=`<div style="font-size:8.5px;color:var(--text2);line-height:1.35;margin-top:1px;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${s.content}</div>`;
+        if(s.product)extra+=`<div style="font-size:8px;color:var(--text3);margin-top:1px">📦 ${s.product}</div>`;
+        if(s.ref)extra+=`<a href="${s.ref}" target="_blank" onclick="event.stopPropagation()" style="font-size:8px;color:var(--accent);display:block;margin-top:1px;text-decoration:none">🔗 레퍼런스</a>`;
+        inner+=`<div class="chip ch-${s.type}" data-sid="${s._id}" oncontextmenu="showCtxMenu(event,'${s._id}')">${dispType}${extra}</div>`;
+      }
+      });
+      if(upSlts.length&&upSlts.some(s=>s.time))inner+=`<div class="ctime">10:00 KST · NY ${calcNY('10:00')}</div>`;
+      h+=`<div class="${cls}" data-date="${ds}">${inner}</div>`;
+    });
+  }
+  h+='</div>';
+  const w=document.getElementById('cal-wrap');w.innerHTML=h;
+  w.querySelectorAll('.cell:not(.empty)').forEach(cell=>{
+    cell.addEventListener('click',e=>{
+      if(e.target.classList.contains('chip')||e.target.closest('.cell-thumb-zone'))return;
+      openDayPop(cell.dataset.date);
+    });
+  });
+  w.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click',e=>{e.stopPropagation();openSlotEdit(chip.dataset.sid);});
+  });
+}
+
+function openDayPop(date){
+  S.dayDate=date;
+  const slts=bd().slots.filter(s=>s.date===date&&!['plan','recruit'].includes(s.type));
+  const hasPlan=bd().slots.some(s=>s.date===date&&s.type==='plan');
+  const hasRec=bd().slots.some(s=>s.date===date&&s.type==='recruit');
+  document.getElementById('day-title').textContent=date+' 상세';
+  let h='';
+  if(hasPlan){
+    const planSlots=bd().slots.filter(s=>s.date===date&&s.type==='plan');
+    h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span class="badge b-plan">기획 주간</span>
+      <button class="btn btn-d btn-xs" onclick="deleteTypeSlots('${date}','plan')">삭제</button>
+    </div>`;
+  }
+  if(hasRec){
+    const recSlots=bd().slots.filter(s=>s.date===date&&s.type==='recruit');
+    h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span class="badge b-recruit">섭외 주간</span>
+      <button class="btn btn-d btn-xs" onclick="deleteTypeSlots('${date}','recruit')">삭제</button>
+    </div>`;
+  }
+  if(!slts.length&&!hasPlan&&!hasRec)h='<p style="color:var(--text3);font-size:12px">등록된 슬롯이 없어요.</p>';
+  slts.forEach(s=>{
+    const clip=s.ugcId?bd().ugc.find(u=>u.id===s.ugcId):null;
+    const thumb=thumbFor(s);
+    const isShoot=s.type==='shoot';
+    let thumbHtml=thumb
+      ?`<div class="pop-thumb-wrap"><img class="pop-thumb" src="${thumb}" alt=""></div>`
+      :!isShoot?`<div class="paste-zone" style="margin-bottom:10px;padding:12px;cursor:pointer" onclick="document.querySelector('#day-body input[data-sid=\\'${s._id}\\']').click()">
+          <div style="font-size:16px;margin-bottom:4px">📋</div>
+          <div style="font-size:11px;font-weight:500;color:var(--text2)">Ctrl+V 붙여넣기 또는 클릭해서 파일 선택</div>
+          <input type="file" accept="image/*" data-sid="${s._id}" style="display:none" onchange="uploadThumbForSlot('${s._id}',this)">
+        </div>`:'';
+    let detail='';
+    if(isShoot){
+      const crs=(s.shootCreators||[]).map(cid=>{
+        const cr=bd().creators.find(x=>x._id===cid);
+        return cr?`<div class="shoot-cr-card"><div style="display:flex;justify-content:space-between;align-items:center">
+          <div><span style="font-weight:500;font-size:12px">${cr.name}</span> <span style="font-size:10px;color:var(--text2)">${cr.handle||''}</span>${cr.content?`<div style="font-size:10px;color:var(--text3)">${cr.content}</div>`:''}</div>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:#c44d10">${cr.fee?'₩'+cr.fee.toLocaleString():'미정'}</span>
+        </div></div>`:''}).join('');
+      const tot=(s.shootCreators||[]).reduce((t,cid)=>{const cr=bd().creators.find(x=>x._id===cid);return t+(cr?.fee||0);},0);
+      detail=`
+        <div class="sp-row"><div class="sp-lbl">촬영 시간</div><div class="sp-val">${s.time||'—'}</div></div>
+        ${s.shootLocation?`<div class="sp-row"><div class="sp-lbl">장소</div><div class="sp-val">${s.shootLocation}</div></div>`:''}
+        ${s.shootDirector?`<div class="sp-row"><div class="sp-lbl">담당</div><div class="sp-val">${s.shootDirector}</div></div>`:''}
+        ${s.memo?`<div class="sp-row"><div class="sp-lbl">메모</div><div class="sp-val" style="color:var(--text2)">${s.memo}</div></div>`:''}
+        ${crs?`<div class="sp-row" style="flex-direction:column;align-items:stretch"><div class="sp-lbl" style="margin-bottom:5px">크리에이터</div>${crs}</div>`:'<div class="sp-row"><div class="sp-lbl">크리에이터</div><div class="sp-val" style="color:var(--text3)">미지정</div></div>'}
+        ${tot?`<div style="margin-top:6px;padding:8px 10px;background:#fdf8e0;border:1px solid #e8cc6a;border-radius:6px;display:flex;justify-content:space-between"><span style="font-size:11px;color:#8a6200">합산 비용</span><span style="font-family:'DM Mono',monospace;font-weight:600;color:#8a6200">₩${tot.toLocaleString()}</span></div>`:''}`;
+    } else {
+      detail=`
+        <div class="sp-row"><div class="sp-lbl">제목</div><div class="sp-val">${s.title||'—'}</div></div>
+        ${s.typeCustom?`<div class="sp-row"><div class="sp-lbl">유형</div><div class="sp-val">${s.typeCustom}</div></div>`:''}
+        ${s.content?`<div class="sp-row"><div class="sp-lbl">내용</div><div class="sp-val">${s.content}</div></div>`:''}
+        ${s.product?`<div class="sp-row"><div class="sp-lbl">제품</div><div class="sp-val">${s.product}</div></div>`:''}
+        ${s.time?`<div class="sp-row"><div class="sp-lbl">업로드</div><div class="sp-val">${s.time} KST · 뉴욕 ${calcNY(s.time)}</div></div>`:''}
+        ${s.ref?`<div class="sp-row"><div class="sp-lbl">레퍼런스</div><div class="sp-val"><a href="${s.ref}" target="_blank" style="color:var(--nuri);font-weight:500">${s.ref.length>50?s.ref.slice(0,50)+'…':s.ref} ↗</a></div></div>`:''}
+        ${clip?`<div class="sp-row"><div class="sp-lbl">UGC ID</div><div class="sp-val" style="font-size:10.5px">${clip.id}</div></div>`:''}
+        ${clip?.acc?`<div class="sp-row"><div class="sp-lbl">사용 계정</div><div class="sp-val">${clip.acc}</div></div>`:''}
+        ${clip?.memo?`<div class="sp-row"><div class="sp-lbl">메모</div><div class="sp-val" style="color:var(--text2)">${clip.memo}</div></div>`:''}`;
+    }
+    h+=`<div class="slot-pop">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+        <span class="badge b-${s.type}">${tlbl(s.type)}</span>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-g btn-xs" onclick="openSlotEdit('${s._id}')">${isShoot?'촬영 편집':'편집'}</button>
+          <button class="btn btn-d btn-xs" onclick="deleteSlot('${s._id}')">삭제</button>
+        </div>
+      </div>
+      ${thumbHtml}${detail}
+    </div>`;
+  });
+  document.getElementById('day-body').innerHTML=h;
+  openOv('ov-day');
+}
+function deleteSlot(id){if(!confirm('삭제?'))return;S.data[S.brand].slots=bd().slots.filter(s=>s._id!==id);dbDelete('slots',id);closeOv('ov-day');renderCal();}
+function deleteTypeSlots(date,type){
+  if(!confirm(`이 날 ${type==='plan'?'기획':'섭외'} 주간을 삭제할까요?`))return;
+  const toDelete=bd().slots.filter(s=>s.date===date&&s.type===type);
+  toDelete.forEach(s=>dbDelete('slots',s._id));
+  S.data[S.brand].slots=bd().slots.filter(s=>!(s.date===date&&s.type===type));
+  closeOv('ov-day');renderCal();
+}
+document.getElementById('day-add-btn').addEventListener('click',()=>{closeOv('ov-day');openSlotAdd(S.dayDate);});
+
+/* Slot modal */
+document.getElementById('btn-add-slot').addEventListener('click',()=>openSlotAdd(null));
+function openSlotAdd(date){
+  S.editSlotId=null;S.slotThumbData=null;clearSlotThumb();
+  document.getElementById('slot-modal-title').textContent='슬롯 추가';
+  ['s-title-val','s-ref','s-ugcid','s-content','s-product','s-type-custom'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('s-date').value=date||'';
+  document.getElementById('s-type').value='ugc';
+  document.getElementById('s-time').value='10:00';
+  openOv('ov-slot');
+}
+function openSlotEdit(id){
+  const s=bd().slots.find(x=>x._id===id);if(!s)return;
+  if(s.type==='shoot'){openShootModal(id);return;}
+  S.editSlotId=id;S.slotThumbData=s.thumb||null;
+  document.getElementById('slot-modal-title').textContent='슬롯 편집';
+  document.getElementById('s-date').value=s.date;
+  document.getElementById('s-type').value=s.type;
+  document.getElementById('s-title-val').value=s.title;
+  document.getElementById('s-time').value=s.time||'10:00';
+  document.getElementById('s-ref').value=s.ref||'';
+  document.getElementById('s-content').value=s.content||'';
+  document.getElementById('s-product').value=s.product||'';
+  document.getElementById('s-type-custom').value=s.typeCustom||'';
+  document.getElementById('s-ugcid').value=s.ugcId||'';
+  if(s.thumb)applyThumbSlot(s.thumb);else clearSlotThumb();
+  closeOv('ov-day');openOv('ov-slot');
+}
+document.getElementById('save-slot-btn').addEventListener('click',()=>{
+  const d={date:document.getElementById('s-date').value,type:document.getElementById('s-type').value,typeCustom:document.getElementById('s-type-custom').value,content:document.getElementById('s-content').value,product:document.getElementById('s-product').value,
+    title:document.getElementById('s-title-val').value,time:document.getElementById('s-time').value,
+    ref:document.getElementById('s-ref').value,thumb:S.slotThumbData||'',ugcId:document.getElementById('s-ugcid').value};
+  if(!d.date)return;
+  let slotObj;
+  if(S.editSlotId){slotObj=bd().slots.find(x=>x._id===S.editSlotId);if(slotObj)Object.assign(slotObj,d);}
+  else{slotObj={_id:gid(),...d,shootLocation:'',shootDirector:'',shootCreators:[],memo:''};bd().slots.push(slotObj);}
+  dbSave('slots', slotToDB(slotObj, S.brand));
+  closeOv('ov-slot');renderCal();
+});
+
+/* Shoot modal */
+function openShootModal(slotId){
+  const s=bd().slots.find(x=>x._id===slotId);if(!s)return;
+  S.editSlotId=slotId;
+  document.getElementById('shoot-modal-title').textContent='촬영일 설정 — '+s.date;
+  document.getElementById('sh-date').value=s.date;
+  document.getElementById('sh-time').value=s.time||'09:30';
+  document.getElementById('sh-location').value=s.shootLocation||'';
+  document.getElementById('sh-director').value=s.shootDirector||'';
+  document.getElementById('sh-memo').value=s.memo||'';
+  renderShootCrList(s.shootCreators||[]);
+  closeOv('ov-day');openOv('ov-shoot');
+}
+function renderShootCrList(sel){
+  const list=document.getElementById('sh-creator-list'),none=document.getElementById('sh-no-creators');
+  const crs=bd().creators;
+  if(!crs.length){list.innerHTML='';none.style.display='';return;}
+  none.style.display='none';
+  const sl={new:'미접촉',contact:'연락중',confirmed:'확정',done:'완료'};
+  list.innerHTML=crs.map(c=>`<label style="display:flex;align-items:flex-start;gap:9px;padding:9px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);cursor:pointer">
+    <input type="checkbox" value="${c._id}" ${sel.includes(c._id)?'checked':''} onchange="updateShootSummary()" style="margin-top:2px;accent-color:var(--accent)">
+    <div style="flex:1"><div style="font-size:12px;font-weight:500">${c.name} <span style="font-size:10px;color:var(--text2);font-weight:400">${c.handle||''}</span></div>
+    <div style="font-size:10px;color:var(--text2)">${c.content||'콘텐츠 미지정'}</div></div>
+    <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:#c44d10">${c.fee?'₩'+c.fee.toLocaleString():'미정'}</div>
+  </label>`).join('');
+  updateShootSummary();
+}
+function updateShootSummary(){
+  const checked=Array.from(document.querySelectorAll('#sh-creator-list input:checked')).map(i=>i.value);
+  const sel=bd().creators.filter(c=>checked.includes(c._id));
+  const sum=document.getElementById('sh-selected-summary');
+  if(!sel.length){sum.style.display='none';return;}
+  sum.style.display='';
+  document.getElementById('sh-total-fee').textContent='₩'+sel.reduce((t,c)=>t+(c.fee||0),0).toLocaleString();
+  document.getElementById('sh-summary-cards').innerHTML=sel.map(c=>`<div class="shoot-cr-card" style="display:flex;justify-content:space-between;align-items:center">
+    <div><span style="font-weight:500;font-size:12px">${c.name}</span> <span style="font-size:10px;color:var(--text2)">${c.handle||''}</span>${c.content?`<div style="font-size:10px;color:var(--text3)">${c.content}</div>`:''}</div>
+    <span style="font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:#c44d10">${c.fee?'₩'+c.fee.toLocaleString():'미정'}</span>
+  </div>`).join('');
+}
+document.getElementById('save-shoot-btn').addEventListener('click',()=>{
+  const s=bd().slots.find(x=>x._id===S.editSlotId);if(!s)return;
+  const checked=Array.from(document.querySelectorAll('#sh-creator-list input:checked')).map(i=>i.value);
+  s.date=document.getElementById('sh-date').value;
+  s.time=document.getElementById('sh-time').value;
+  s.shootLocation=document.getElementById('sh-location').value;
+  s.shootDirector=document.getElementById('sh-director').value;
+  s.memo=document.getElementById('sh-memo').value;
+  s.shootCreators=checked;
+  s.title='촬영일 ('+(s.shootLocation||'누리라운지')+')';
+  dbSave('slots', slotToDB(s, S.brand));
+  closeOv('ov-shoot');renderCal();
+});
+
+
+/* ════ INIT DATA ════ */
+function initLaboUGC(){
+  const D=[
+    {id:'labo-ugc-01-001_@s.v.e.t.a.p.a.k',h:'@s.v.e.t.a.p.a.k',ct:'루틴+정보성 가이드',q:2,drive:'https://drive.google.com/file/d/12QQi8bTNb4E5OPc61xPmmPH3lwp3o5lc/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-002_aivanchen',h:'@aivanchen',ct:'루틴+정보성 가이드',q:2,drive:'https://drive.google.com/file/d/1Wa5cNQN3_FIL0BT3EtEZzeqoajyezC74/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-003_alexa.k',h:'@alexa.k',ct:'루틴+정보성 가이드',q:2,drive:'https://drive.google.com/file/d/1vYhWblAldT-SwPwOaATakDuP4ZplBpUy/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-004_anastasiia6',h:'@anastasiia6',ct:'루틴+정보성 가이드',q:5,drive:'https://drive.google.com/file/d/1sIRy3vj37Lo87astzp61n478A-LhNTbX/view',used:'yes',acc:'NRGW IG, NRGW TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-005_anasty74',h:'@anasty74',ct:'루틴+정보성 가이드',q:5,drive:'https://drive.google.com/file/d/1n-2r5qfbCncR-c84C-bV7uhUslEkYwGO/view',used:'yes',acc:'TT/IG',memo:'누리글로우 KR-Seeding 번들',cl:false,seed:false},
+    {id:'labo-ugc-01-006_baiun_es',h:'@baiun_es',ct:'루틴+정보성 가이드',q:5,drive:'https://drive.google.com/file/d/1EjjiBl0P1-VWkL1vi4BqW9SOM1CFiCne/view',used:'yes',acc:'TT/IG',memo:'누리글로우 KR-Seeding 번들',cl:false,seed:false},
+    {id:'labo-ugc-01-007_clhauriel8',h:'@clhauriel8',ct:'루틴+정보성 가이드',q:3,drive:'https://drive.google.com/file/d/1xOonUbs8GSo0DitcKzpEVaM5f4MSIld2/view',used:'yes',acc:'',memo:'누리글로우 번들',cl:false,seed:false},
+    {id:'labo-ugc-01-008_empressnina',h:'@empressnina',ct:'루틴+정보성 가이드',q:3,drive:'https://drive.google.com/file/d/1lPnQbHBJtG7wbbQB3ep-DyoEwdWEe1Nk/view',used:'yes',acc:'',memo:'누리글로우 번들',cl:false,seed:false},
+    {id:'labo-ugc-01-009_erica.scoro',h:'@erica.scoro',ct:'루틴+정보성 가이드',q:3,drive:'https://drive.google.com/file/d/1h87NqYs0YLS4J2nxHV-MpXfwUFibC67m/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-010_kate_wilczynska',h:'@kate_wilczynska',ct:'정보+수치 강조',q:5,drive:'https://drive.google.com/file/d/1WFkfmlXBeEVDlmeX0U8p250Rrt3V4lEw/view',used:'yes',acc:'TT/IG',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-011_iambobbie21',h:'@iambobbie21',ct:'루틴+정보성 가이드',q:2,drive:'https://drive.google.com/file/d/18pEvXdC9zMRUpth7acjuCK8piT3_GsWO/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-012_marivoro',h:'@marivoro',ct:'루틴+정보성 가이드',q:5,drive:'https://drive.google.com/file/d/1IbUCy4mKgv5eX5QxKAg7J6H-cW3AiI1g/view',used:'yes',acc:'TT/IG',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-013_meloumash',h:'@meloumash',ct:'루틴+정보성 가이드',q:3,drive:'https://drive.google.com/file/d/1BoXJoDedn-R18aqPJAKHwQSPpN06qvXn/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-014_PaulineWon',h:'@PaulineWon',ct:'루틴+정보성 가이드',q:5,drive:'https://drive.google.com/file/d/1xDcLW448NBWCtKfvJ2pv4CfdMfsRP-x5/view',used:'yes',acc:'TT/IG',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-015_poluuuna',h:'@poluuuna',ct:'정보+수치 강조',q:2,drive:'https://drive.google.com/file/d/1AThABrFW1oo0j84elW2omSW0Th9dkd2z/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-016_velykayuliia',h:'@velykayuliia',ct:'정보+수치 강조',q:2,drive:'https://drive.google.com/file/d/113bcwRqXlQ1V-9jCqijJ4TKIFKU6t-q-/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-017_viqtorie',h:'@viqtorie',ct:'정보+수치 강조',q:2,drive:'https://drive.google.com/file/d/1hseC1hZ69e0tpg2vxm0vfgQ2GTIm4G_J/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-018_wikapark',h:'@wikapark',ct:'루틴+정보성 가이드',q:3,drive:'https://drive.google.com/file/d/13wOq6YLk_OiaWTp5aaPYac1JkB5cinJU/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-019_yustapak',h:'@yustapak',ct:'정보+수치 강조',q:5,drive:'https://drive.google.com/file/d/13CLnDZzUBCYQXvxvm5Km5wghZXdP8WWp/view',used:'yes',acc:'NRGW Shopee, TT/IG',memo:'재편집 후 사용',cl:false,seed:false},
+    {id:'labo-ugc-01-020_hahhaneul',h:'@hahhaneul',ct:'루틴+정보성 가이드',q:5,drive:'https://drive.google.com/file/d/1SKe03zpIUs1VZ0hhoyMvc1ku44EH7Y9D/view',used:'yes',acc:'TT/IG',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-021_alsu',h:'@alsu',ct:'정보+수치 강조',q:5,drive:'https://drive.google.com/file/d/1N8PSgLH6Xxhjc2JCi87ixiJqFiifseM8/view',used:'yes',acc:'TT/IG',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-022_Fatima',h:'@Fatima',ct:'루틴+정보성 가이드',q:4,drive:'https://drive.google.com/file/d/1erSlhmwSaAqrsAlEtOFepJGixIbhmG45/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-023_unegasy',h:'@unegasy',ct:'정보+수치 강조',q:0,drive:'https://drive.google.com/file/d/1VEtQrG3C-E33ukwBmY2fkWbZ7HfljsJJ/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-024_susan00',h:'@susan00',ct:'루틴+정보성 가이드',q:2,drive:'https://drive.google.com/file/d/18TWeWfR_elvuI3IBlpz8GqHr2a9H3NyW/view',used:'no',acc:'',memo:'틱톡샵 링크 — 광고 불가',cl:false,seed:false},
+    {id:'labo-ugc-01-025_juliana_haam',h:'@juliana_haam',ct:'루틴+정보성 가이드',q:3,drive:'https://drive.google.com/file/d/1elPS89fAuT3OSW91kgxO-Gex7JT45tJj/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-026_tanysave',h:'@tanysave',ct:'정보+수치 강조',q:5,drive:'https://drive.google.com/file/d/1a5yQq2Pan7sAlNKfUyBr1X20KzuhDkxs/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-027_hanaeljang7',h:'@hanaeljang7',ct:'정보+수치 강조',q:3,drive:'https://drive.google.com/file/d/18LZSSFVOXfu_S6MoVGeNk-BU3ZOq78lA/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-028_soo_jung',h:'@soo_jung',ct:'정보+수치 강조',q:2,drive:'https://drive.google.com/file/d/1z_GyG-NukWB8vuszHJC49Tez_oSFuUsj/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-001_jihanette',h:'@jihanette',ct:'화잘먹 치트키',q:3,drive:'https://drive.google.com/file/d/1g0fZyuJgom5qUCanHtQla91addgAPvjB/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-002_elizavetaa.sinicina',h:'@elizavetaa.sinicina',ct:'화잘먹 치트키',q:4,drive:'https://drive.google.com/file/d/1WkZ4dIKlQIDrazvjJiwZiL-Iq8U2bKk1/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-003_chairmaneleevlog',h:'@chairmaneleevlog',ct:'화잘먹 치트키',q:2,drive:'https://drive.google.com/file/d/16EKz_RcsAwNkrX929UVpz5svPM1BsJxf/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-004_victoriaseoulachi',h:'@victoriaseoulachi',ct:'화잘먹 치트키',q:3,drive:'https://drive.google.com/file/d/1rj_FShcIfKelZ911r1Al3aLVO-qSJnyI/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-005_hanalina',h:'@hanalina',ct:'화알못→성장(설명형)',q:2,drive:'https://drive.google.com/file/d/1YZA-hR6dX3O9mI7CTYc7VLIxpdBr8Xpe/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-006_gioseoul',h:'@gioseoul',ct:'화알못→성장(설명형)',q:4,drive:'https://drive.google.com/file/d/19g6GE6oauGFBP_nE0648UP1CLj5ds46-/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-007_annetkrist',h:'@annetkrist',ct:'화알못→성장(설명형)',q:3,drive:'https://drive.google.com/file/d/1Ii64tv5P9RLlfBUytcWhDp31R0I5TKyV/view',used:'yes',acc:'NRGW IG, NRGW TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-008_katerina_tsoy',h:'@katerina_tsoy',ct:'화알못→성장(설명형)',q:3,drive:'https://drive.google.com/file/d/1okH53nnnkrx_fF4t8nCCNfgomLDloAJE/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-009_nastia_in_seoul',h:'@nastia_in_seoul',ct:'화알못→성장(설명형)',q:5,drive:'https://drive.google.com/file/d/1H1vc0LEYg25ivL-iug7i0G8m3pewiyD3/view',used:'yes',acc:'Labo IG, Labo TT, NRGW Shopee',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-010_PaulineWon',h:'@PaulineWon',ct:'화알못→성장(비쥬얼형)',q:5,drive:'https://drive.google.com/file/d/11UQjYnObZdXtplG_4VPWYOVsIklXpkv7/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-011_anii',h:'@anii',ct:'화알못→성장(비쥬얼형)',q:2,drive:'https://drive.google.com/file/d/1wbypatOgvqeHcVryCd2SGEVv4cTyETkr/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-012_piink',h:'@piink',ct:'목+쇄골 고기능성',q:2,drive:'https://drive.google.com/file/d/1Uf7FND5tBX7IEDJUnSll-7GVfolZ7sum/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-013_mhajo_eira',h:'@mhajo_eira',ct:'목+쇄골 고기능성',q:4,drive:'https://drive.google.com/drive/folders/17DdS-vAbYzzDwNlPtbt-WAgw8c0H5WUR',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-014_Stephidaily',h:'@Stephidaily',ct:'목+쇄골 고기능성',q:4,drive:'https://drive.google.com/file/d/1GHbBbhXhVAfTdy4AUfBQw-EKLmmHBOwN/view',used:'yes',acc:'NRGW IG, NRGW TT, NRGW Shopee',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-015_anastasiya696611000',h:'@anastasiya696611000',ct:'목+쇄골 고기능성',q:5,drive:'https://drive.google.com/file/d/1D0eM0tC99khaVfPg31XWdpInA4qHwD59/view',used:'yes',acc:'Labo IG, Labo TT, NRGW Shopee',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-016_lucie_ugc_',h:'@lucie_ugc_',ct:'목+쇄골 고기능성',q:5,drive:'https://drive.google.com/file/d/1-D1Cn8IH-QjbnhMvbXTKlcM-js16lSNa/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-017_eminehdiary_',h:'@eminehdiary_',ct:'대왕 스포이드 후킹',q:5,drive:'https://drive.google.com/file/d/1eFa7H0akVV-Wbx1RB5fuB9ghlPO0xcoD/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-018_pattylawliet',h:'@pattylawliet',ct:'대왕 스포이드 후킹',q:5,drive:'https://drive.google.com/file/d/1yy1s7IRPlD77MNZQz_9yWi3NTWi8TLzu/view',used:'yes',acc:'NRGW IG, NRGW TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-019_petitehiker21',h:'@petitehiker21',ct:'대왕 스포이드 후킹',q:3,drive:'https://drive.google.com/file/d/1tYmYML_IrHxhK5xocjp8YyFn_cLBYdQc/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-020_SSchreubt',h:'@SSchreubt',ct:'대왕 스포이드 후킹',q:5,drive:'https://drive.google.com/file/d/1DRy6B4apXtaqrU_8zwCrONagChrmcELV/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-021_hazelnnat',h:'@hazelnnat',ct:'대왕 스포이드 후킹',q:5,drive:'https://drive.google.com/file/d/1DImzTfzn9QXFkkbZUst-rssGp5MccV0W/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-022_beettop',h:'@beettop',ct:'대왕 스포이드 후킹',q:3,drive:'https://drive.google.com/file/d/1kyhnrNxkHwHmTxQOG6nJUtzl5lrhXf6S/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-023_neliss.okk',h:'@neliss.okk',ct:'대왕 스포이드 후킹',q:5,drive:'https://drive.google.com/file/d/1VPlcF6Sdz82QJFa3aDbOndkAhoZuiFIz/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-024_kajakrol',h:'@kajakrol',ct:'화알못→성장(비쥬얼형)',q:4,drive:'https://drive.google.com/file/d/1Xx09Bo26OXhcX38Jfmx0bgjR1d-JnYqO/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-025_ohmila',h:'@ohmila',ct:'화알못→성장(설명형)',q:3,drive:'https://drive.google.com/file/d/1fibgn-ZipOlRZEsLes1opwmRafJMfkd2/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-026_liyskaya',h:'@liyskaya',ct:'화잘먹 치트키',q:5,drive:'https://drive.google.com/file/d/11KJp9QiM6SR_iY1whNyp_b3cPhf_EdAP/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-02-027_ellsch07',h:'@ellsch07',ct:'목+쇄골 고기능성',q:4,drive:'https://drive.google.com/file/d/1mUOsgXoOww-6OOGoyrJI9Mgd5nqDkXhV/view',used:'no',acc:'',memo:'',cl:false,seed:false},
+    {id:'labo-ugc-01-001_cl_@s.v.e.t.a.p.a.k',h:'@s.v.e.t.a.p.a.k',ct:'루틴+정보성 가이드',q:2,drive:'https://drive.google.com/file/d/1vFdbfa-7n9QTk_7xLH_iagN4bFGqJCit/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-002_cl_aivanchen',h:'@aivanchen',ct:'피치 사용+정보',q:2,drive:'https://drive.google.com/file/d/1kG-Cuz_Aqyu9eH4YUrwgihd0GHHqPtMT/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-003_cl_alexa.k',h:'@alexa.k',ct:'피치 사용+정보',q:2,drive:'https://drive.google.com/file/d/12uUxIqwNOV5xiOIMRu2xClPHjdCj00iB/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-004_cl_anastasiia6',h:'@anastasiia6',ct:'루틴+정보성 가이드',q:5,drive:'https://drive.google.com/file/d/1Hzrl_zL8g3Ua0oPGlHaQHeH-dk66wv2N/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-005_cl_anasty74',h:'@anasty74',ct:'루틴+정보성 가이드',q:5,drive:'https://drive.google.com/file/d/1wJ33jkRAl2PGgg4eJSCY3kbOY6tfUcVu/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-006_cl_baiun_es',h:'@baiun_es',ct:'루틴+정보성 가이드',q:5,drive:'https://drive.google.com/file/d/1OZg-d3dZfzHrXUu0j4WeTsnjd65XO_Pp/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-007_cl_clhauriel8',h:'@clhauriel8',ct:'루틴+정보성 가이드',q:3,drive:'https://drive.google.com/file/d/1IMcbNHFDVRfbtFiMBWJ_-_cHPEYuo_Ej/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-008_cl_empressnina',h:'@empressnina',ct:'피치 사용+정보',q:3,drive:'https://drive.google.com/file/d/1wrPwWKOhrBHxr6mud5-zWHk5IFhXbu5I/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-010_cl_kate_wilczynska',h:'@kate_wilczynska',ct:'정보+수치 강조',q:5,drive:'https://drive.google.com/file/d/1WpacR_8ZcJA_PX11C9ARZKNPGHwZid0T/view',used:'yes',acc:'Labo IG, Labo TT',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-012_cl_marivoro',h:'@marivoro',ct:'피치 사용+정보',q:5,drive:'https://drive.google.com/file/d/1KY1QuE0elJmbakK2BdpHnen1i6XNIeJ4/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-013_cl_meloumash',h:'@meloumash',ct:'피치 사용+정보',q:3,drive:'https://drive.google.com/file/d/1JEVmOkOYseY0OM0iuG4GP2AnuGpZrsWn/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-014_cl_PaulineWon',h:'@PaulineWon',ct:'루틴+정보성 가이드',q:5,drive:'https://drive.google.com/file/d/13GftCiQsISPJ-DJvwGM22BcGdlRawTdg/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-016_cl_velykayuliia',h:'@velykayuliia',ct:'정보+수치 강조',q:2,drive:'https://drive.google.com/file/d/1qzbTi3ctKtIVJwNJioOKn8OGXjZ53eJT/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-017_cl_viqtorie',h:'@viqtorie',ct:'정보+수치 강조',q:2,drive:'https://drive.google.com/file/d/1w6BG_Vz-zA3_FrOMQXid_JqnIWnS98gS/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-018_cl_wikapark',h:'@wikapark',ct:'피치 사용+정보',q:3,drive:'https://drive.google.com/file/d/1gQxVl-i9KHpk28P3grbkqbERuWYtkHa9/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-019_cl_yustapak',h:'@yustapak',ct:'정보+수치 강조',q:5,drive:'https://drive.google.com/file/d/18EFYuZnzC9nFKcDaM-O1oyWKElX3Czpp/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-020_cl_hahhaneul',h:'@hahhaneul',ct:'피치 사용+정보',q:5,drive:'https://drive.google.com/file/d/1wYUvxa88YnecnqAdFdhub2aSjHkycw0f/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-021_cl_alsu',h:'@alsu',ct:'정보+수치 강조',q:5,drive:'https://drive.google.com/file/d/1bbwPCJNNd9oEEBnxWMlLeocogEQVpNLJ/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-022_cl_Fatima',h:'@Fatima',ct:'루틴+정보성 가이드',q:4,drive:'https://drive.google.com/file/d/1qgN3hQz2cB59TCqNimFF8JnQHCNVoInM/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-023_cl_unegasy',h:'@unegasy',ct:'피치 사용+정보',q:2,drive:'https://drive.google.com/file/d/11SNvlvAlJr3CJIQZf46sBycH3XvJTTDK/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-024_cl_susan00',h:'@susan00',ct:'피치 사용+정보',q:2,drive:'https://drive.google.com/file/d/1B2MpSGb73dCjcDgjiLUR7WGNV8XuJgBb/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-025_cl_juliana_haam',h:'@juliana_haam',ct:'피치 사용+정보',q:3,drive:'https://drive.google.com/file/d/1z1RIFh_ovqnfTfEXI60MmilxHB2NbDnJ/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-026_cl_tanysave',h:'@tanysave',ct:'정보+수치 강조',q:5,drive:'https://drive.google.com/file/d/1O1oOTesqMBkb9wj8WtRZVLb5qdcjtyd_/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-027_cl_hanaeljang7',h:'@hanaeljang7',ct:'정보+수치 강조',q:3,drive:'https://drive.google.com/file/d/1NO6Rw7XwJ4qBighunIshnCcM1-69hK1e/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-ugc-01-028_cl_soo_jung',h:'@soo_jung',ct:'정보+수치 강조',q:2,drive:'https://drive.google.com/file/d/1kuTPMa1mTaFIemPCIDMMH-D-xvGUzMTG/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+    {id:'labo-seed-01-001_cl_ksana.collab',h:'@ksana.collab',ct:'루틴+서울콘 클린본',q:4,drive:'https://drive.google.com/file/d/1E1eSvRpb7UNOS-zsSkWxBjg_C3qvucXI/view',used:'no',acc:'',memo:'',cl:true,seed:true},
+    {id:'labo-seed-01-002_cl_Nastia_in_seoul',h:'@Nastia_in_seoul',ct:'루틴+서울콘 클린본',q:5,drive:'https://drive.google.com/file/d/1km3J2cdBmp1SjmO6DPf7h5kE80St21VA/view',used:'no',acc:'',memo:'',cl:true,seed:true},
+    {id:'labo-seed-01-003_cl_gioseoul',h:'@gioseoul',ct:'루틴+B/A 클린본',q:3,drive:'https://drive.google.com/file/d/1ZMgNKKIoxSGq1ykR7X5tK974MbRqc4d_/view',used:'no',acc:'',memo:'',cl:true,seed:true},
+    {id:'labo-seed-01-004_cl_anibrk',h:'@anibrk',ct:'루틴+B/A 클린본',q:4,drive:'https://drive.google.com/file/d/1vmSEUXo7Zo0A7jvgmBd5h4rilDEkTpDZ/view',used:'no',acc:'',memo:'',cl:true,seed:true},
+    {id:'labo-seed-01-005_cl_liyskaya',h:'@liyskaya',ct:'루틴+서울콘 클린본',q:4,drive:'https://drive.google.com/file/d/1aceqAdkL9SbYluM-m3L2NQQla785IkUp/view',used:'no',acc:'',memo:'',cl:true,seed:true},
+    {id:'labo-seed-01-006_cl_gabriellagoncalves379',h:'@gabriellagoncalves379',ct:'루틴+서울콘 클린본',q:4,drive:'https://drive.google.com/file/d/1pWrmnRvtwKt-g-Nk87qphBDIi_M2RvCJ/view',used:'no',acc:'',memo:'',cl:true,seed:true},
+    {id:'labo-seed-01-007_cl_lina0823',h:'@lina0823',ct:'루틴+서울콘 클린본',q:3,drive:'https://drive.google.com/file/d/13U4jXnYo4sc9vFG-RY5QDEu8SjLBd_Xe/view',used:'no',acc:'',memo:'',cl:true,seed:true},
+    {id:'labo-Nuri-01-001',h:'in-house',ct:'누리글로우 소셜 정보성',q:3,drive:'https://drive.google.com/file/d/16VEph9XT4z4XYWzErmAy0loGmwGxDqFz/view',used:'yes',acc:'NRGW IG, NRGW TT',memo:'',cl:false,seed:false},
+    {id:'labo-Nuri-01_cl-001',h:'in-house',ct:'누리글로우 소셜 (클린본)',q:3,drive:'https://drive.google.com/file/d/1VOOKiVs2XqBKDzyCH490N62YtJ6im36F/view',used:'no',acc:'',memo:'',cl:true,seed:false},
+  ];
+  D.forEach(r=>S.data.labo.ugc.push({...r,_id:gid(),thumb:'',date:'',product:''}));
+}
+
+function initSlots(brand){
+  const d=S.data[brand];
+  const slot=(dt,type,title,extra={})=>d.slots.push({_id:gid(),date:dt,type,title,time:type==='shoot'?'09:30':type==='plan'||type==='recruit'?'':'10:00',ref:'',thumb:'',ugcId:'',shootLocation:type==='shoot'?'누리라운지':'',shootDirector:'',shootCreators:[],memo:'',...extra});
+
+  // Generate May 2025 to Dec 2027
+  let laboUgcIdx=0;
+  for(let y=2025;y<=2027;y++){
+    const startM=(y===2025)?4:0; // April index = 4 = May (0-indexed month 4)
+    for(let m=startM;m<=11;m++){
+      const dim=new Date(y,m+1,0).getDate();
+      const mStr=`${y}-${String(m+1).padStart(2,'0')}`;
+
+      // Planning week: last 3 weekdays of prev month (simplified: 1st week days 1-5)
+      // Use Mon-Fri of week 1 as planning week
+      for(let d2=1;d2<=7;d2++){
+        const dow=new Date(y,m,d2).getDay();
+        const ds=`${mStr}-${String(d2).padStart(2,'0')}`;
+        if(dow>=1&&dow<=5)slot(ds,'plan','기획 주간');
+      }
+      // Recruit week: Mon-Fri of week 2
+      for(let d2=8;d2<=14;d2++){
+        const dow=new Date(y,m,d2).getDay();
+        const ds=`${mStr}-${String(d2).padStart(2,'0')}`;
+        if(dow>=1&&dow<=5)slot(ds,'recruit','섭외 주간');
+      }
+      // Shoot day: 3rd Monday
+      let monCount=0;
+      for(let d2=1;d2<=dim;d2++){
+        if(new Date(y,m,d2).getDay()===1){monCount++;if(monCount===3){slot(`${mStr}-${String(d2).padStart(2,'0')}`,'shoot','촬영일 (누리라운지)');break;}}
+      }
+      // Upload slots: Mon=meme, Wed=creator, Fri=meme, Sat=ugc
+      for(let d2=1;d2<=dim;d2++){
+        const dow=new Date(y,m,d2).getDay();
+        const ds=`${mStr}-${String(d2).padStart(2,'0')}`;
+        if(dow===1)slot(ds,'meme','텍스트 밈 릴스');
+        else if(dow===3)slot(ds,'creator','크리에이터 릴스');
+        else if(dow===5)slot(ds,'meme','텍스트 밈 릴스');
+        else if(dow===6){
+          if(brand==='labo'&&laboUgcIdx<d.ugc.length){
+            const u=d.ugc[laboUgcIdx++];
+            slot(ds,'ugc',`UGC · ${u.h}`,{ref:u.drive,ugcId:u.id});
+          } else {
+            slot(ds,'ugc','UGC 슬롯');
+          }
+        }
+      }
+    }
+  }
+  [{name:'Canva Pro',month:'매월',amount:20000},{name:'CapCut Pro',month:'매월',amount:15000}]
+    .forEach(e=>d.expenses.push({_id:gid(),...e}));
+}
+/* ════ UGC ════ */
+document.getElementById('btn-add-ugc').addEventListener('click',()=>openUgcModal(null));
+document.getElementById('btn-import').addEventListener('click',()=>openOv('ov-import'));
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');S.ugcTab=b.dataset.tab;renderUGC();
+}));
+let _sq='',_sf='';
+document.getElementById('ugc-search').addEventListener('input',e=>{_sq=e.target.value.toLowerCase();renderUGC();});
+document.getElementById('ugc-f-used').addEventListener('change',e=>{_sf=e.target.value;renderUGC();});
+
+function fUgc(){
+  let l=bd().ugc;
+  if(S.ugcTab==='original')l=l.filter(u=>!u.cl&&!u.seed);
+  else if(S.ugcTab==='clean')l=l.filter(u=>u.cl&&!u.seed);
+  else if(S.ugcTab==='seed')l=l.filter(u=>u.seed);
+  if(_sq)l=l.filter(u=>(u.id+u.h+u.ct+u.memo).toLowerCase().includes(_sq));
+  if(_sf)l=l.filter(u=>u.used===_sf);
+  return l;
+}
+function openUgcModal(id){
+  S.editUgcId=id;S.ugcThumbData=null;clearUgcThumb();
+  document.getElementById('ugc-modal-title').textContent=id?'UGC 클립 편집':'UGC 클립 추가';
+  const u=id?bd().ugc.find(x=>x._id===id):null;
+  ['u-id','u-type','u-drive','u-date','u-product','u-memo'].forEach(fid=>{
+    const k={['u-id']:'id',['u-type']:'ct',['u-drive']:'drive',['u-date']:'date',['u-product']:'product',['u-memo']:'memo'}[fid];
+    document.getElementById(fid).value=u?.[k]||'';
+  });
+  document.getElementById('u-q').value=u?.q||3;document.getElementById('u-used').value=u?.used||'no';
+  if(u?.thumb)applyThumbUgc(u.thumb);
+  // 사용 계정 태그 초기화
+  S._accTags = u?.acc ? u.acc.split(',').map(a=>a.trim()).filter(Boolean) : [];
+  renderAccTags();
+  openOv('ov-ugc');
+}
+document.getElementById('save-ugc-btn').addEventListener('click',()=>{
+  const data={id:document.getElementById('u-id').value,h:'',
+    ct:document.getElementById('u-type').value,q:parseInt(document.getElementById('u-q').value)||3,
+    drive:document.getElementById('u-drive').value,thumb:S.ugcThumbData||'',
+    used:document.getElementById('u-used').value,acc:(S._accTags||[]).join(', '),
+    date:document.getElementById('u-date').value,product:document.getElementById('u-product').value,
+    memo:document.getElementById('u-memo').value,
+    cl:document.getElementById('u-id').value.includes('_cl_'),
+    seed:document.getElementById('u-id').value.includes('seed')};
+  if(!data.id)return;
+  let ugcObj;
+  if(S.editUgcId){ugcObj=bd().ugc.find(x=>x._id===S.editUgcId);if(ugcObj)Object.assign(ugcObj,data);}
+  else{ugcObj={_id:gid(),...data};bd().ugc.push(ugcObj);}
+  dbSave('ugc_clips', ugcToDB(ugcObj, S.brand));
+  closeOv('ov-ugc');renderUGC();updateSidebar();
+});
+async function uploadThumbForUgc(ugcId,input){
+  const f=input.files[0];if(!f)return;
+  const data=await readFile(f);
+  const u=bd().ugc.find(x=>x._id===ugcId);if(u){u.thumb=data;renderUGC();}
+}
+function renderUGC(){
+  const all=bd().ugc,tot=all.length,used=all.filter(u=>u.used==='yes').length,rdy=all.filter(u=>u.used==='no').length,cl=all.filter(u=>u.cl).length;
+  document.getElementById('ugc-cnt').textContent=tot;
+  document.getElementById('ugc-stats').innerHTML=`
+    <div class="stat"><div class="sv">${tot}</div><div class="sl">전체 클립</div></div>
+    <div class="stat"><div class="sv" style="color:var(--nuri)">${used}</div><div class="sl">사용됨</div></div>
+    <div class="stat"><div class="sv" style="color:var(--leps)">${rdy}</div><div class="sl">미사용</div></div>
+    <div class="stat"><div class="sv" style="color:#4a7a28">${cl}</div><div class="sl">클린본</div></div>`;
+  const ub={no:'b-recruit',yes:'b-ugc',editing:'b-plan'},ul={no:'미사용',yes:'사용됨',editing:'편집중'};
+  const list=fUgc();
+  document.getElementById('ugc-tbody').innerHTML=!list.length?
+    `<tr><td colspan="12" style="text-align:center;padding:20px;color:var(--text3)">클립이 없어요</td></tr>`:
+    list.map((u,i)=>`<tr>
+      <td style="font-family:'DM Mono',monospace;color:var(--text3);font-size:10px">${String(i+1).padStart(2,'0')}</td>
+      <td>${u.thumb?`<img class="tbl-thumb" src="${u.thumb}" alt="">`:
+        `<label class="tbl-thumb-upload" title="썸네일 업로드">📸<input type="file" accept="image/*" style="display:none" onchange="uploadThumbForUgc('${u._id}',this)"></label>`}</td>
+      <td class="tdn" style="font-size:11px;line-height:1.5;max-width:180px">${u.cl?`<span class="clean-mark">클린본</span>`:''}${u.id}</td>
+      <td><span class="b-gray badge" style="font-size:9.5px">${u.ct}</span></td>
+      <td>${starsH(u.q)}</td>
+      <td>${u.drive?`<a href="${u.drive}" target="_blank">드라이브 ↗</a>`:'—'}</td>
+      <td><span class="badge ${ub[u.used]||'b-gray'}">${ul[u.used]||'—'}</span></td>
+      <td style="font-size:10.5px">${u.acc?u.acc.split(',').map(a=>`<span class="acc-tag" style="font-size:9.5px">${a.trim()}</span>`).join(''):'—'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:10.5px">${u.date||'—'}</td>
+      <td style="font-size:10.5px;max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.memo||'—'}</td>
+      <td><div style="display:flex;gap:3px">
+        <button class="btn btn-g btn-xs" onclick="openUgcModal('${u._id}')">편집</button>
+        <button class="btn btn-d btn-xs" onclick="delUGC('${u._id}')">×</button>
+      </div></td>
+    </tr>`).join('');
+}
+function starsH(q){let h='<div class="stars">';for(let i=1;i<=5;i++)h+=`<div class="star ${i<=q?'on':'off'}"></div>`;return h+'</div>';}
+function delUGC(id){if(!confirm('삭제?'))return;S.data[S.brand].ugc=bd().ugc.filter(u=>u._id!==id);dbDelete('ugc_clips',id);renderUGC();updateSidebar();}
+
+/* CSV */
+const iz=document.getElementById('import-zone'),ci=document.getElementById('csv-input');
+iz.addEventListener('click',()=>ci.click());
+ci.addEventListener('change',e=>handleCSV(e.target.files[0]));
+iz.addEventListener('dragover',e=>{e.preventDefault();iz.style.borderColor='var(--accent)'});
+iz.addEventListener('dragleave',()=>iz.style.borderColor='');
+iz.addEventListener('drop',e=>{e.preventDefault();iz.style.borderColor='';handleCSV(e.dataTransfer.files[0])});
+function handleCSV(f){
+  if(!f)return;const r=new FileReader();
+  r.onload=e=>{
+    const ls=e.target.result.split('\n').filter(l=>l.trim());if(ls.length<2)return;
+    const hs=ls[0].split(',').map(h=>h.trim());
+    S.importRows=ls.slice(1).map(l=>{const vs=l.split(',').map(v=>v.trim()),o={};hs.forEach((h,i)=>o[h]=vs[i]||'');
+      return{_id:gid(),id:o.id||'',h:o.handle||'',ct:o.contentType||'',q:parseInt(o.quality)||3,drive:o.driveLink||'',
+        thumb:'',used:o.used||'no',acc:o.usedAccount||'',date:o.date||'',product:'',memo:o.memo||'',
+        cl:(o.id||'').includes('_cl_'),seed:(o.id||'').includes('seed')};
+    });
+    document.getElementById('import-preview').innerHTML=`<p style="color:var(--nuri);font-size:12px">${S.importRows.length}개 감지됨. 가져오기를 클릭하세요.</p>`;
+    document.getElementById('confirm-import').style.display='';
+  };r.readAsText(f);
+}
+document.getElementById('confirm-import').addEventListener('click',()=>{
+  bd().ugc.push(...S.importRows);S.importRows=[];
+  document.getElementById('confirm-import').style.display='none';
+  document.getElementById('import-preview').innerHTML='';
+  closeOv('ov-import');renderUGC();updateSidebar();
+});
+
+/* ════ CREATORS ════ */
+document.getElementById('btn-add-cr').addEventListener('click',()=>openCrModal(null));
+function openCrModal(id){
+  S.editCrId=id;
+  document.getElementById('cr-modal-title').textContent=id?'크리에이터 편집':'크리에이터 추가';
+  const c=id?bd().creators.find(x=>x._id===id):null;
+  const fm={['c-name']:'name',['c-handle']:'handle',['c-ig']:'ig',['c-tt']:'tt',['c-date']:'date',['c-fee']:'fee',['c-content']:'content',['c-memo']:'memo'};
+  Object.entries(fm).forEach(([fid,k])=>document.getElementById(fid).value=c?.[k]||'');
+  document.getElementById('c-status').value=c?.status||'new';
+  openOv('ov-cr');
+}
+document.getElementById('save-cr-btn').addEventListener('click',()=>{
+  const data={name:document.getElementById('c-name').value,handle:document.getElementById('c-handle').value,
+    ig:document.getElementById('c-ig').value,tt:document.getElementById('c-tt').value,
+    status:document.getElementById('c-status').value,date:document.getElementById('c-date').value,
+    fee:parseInt(document.getElementById('c-fee').value)||0,content:document.getElementById('c-content').value,
+    memo:document.getElementById('c-memo').value};
+  if(!data.name)return;
+  let crObj;
+  if(S.editCrId){crObj=bd().creators.find(x=>x._id===S.editCrId);if(crObj)Object.assign(crObj,data);}
+  else{crObj={_id:gid(),...data};bd().creators.push(crObj);}
+  dbSave('creators', crToDB(crObj, S.brand));
+  closeOv('ov-cr');renderCreators();updateSidebar();
+});
+function renderCreators(){
+  const sl={new:'미접촉',contact:'연락중',confirmed:'확정',done:'완료'};
+  const sb={new:'b-gray',contact:'b-recruit',confirmed:'b-ugc',done:'b-clean'};
+  const cnt={};bd().creators.forEach(c=>cnt[c.status]=(cnt[c.status]||0)+1);
+  const tot=bd().creators.reduce((s,c)=>s+(c.fee||0),0);
+  document.getElementById('cr-stats').innerHTML=`
+    <div class="stat"><div class="sv">${bd().creators.length}</div><div class="sl">전체</div></div>
+    <div class="stat"><div class="sv" style="color:var(--nuri)">${(cnt.confirmed||0)+(cnt.done||0)}</div><div class="sl">확정/완료</div></div>
+    <div class="stat"><div class="sv" style="color:var(--recruit,#1a5a90)">${cnt.contact||0}</div><div class="sl">연락중</div></div>
+    <div class="stat"><div class="sv" style="color:#c44d10">₩${tot.toLocaleString()}</div><div class="sl">총 비용</div></div>`;
+  const el=document.getElementById('cr-list');
+  if(!bd().creators.length){el.innerHTML='<div class="empty"><div class="ei">🎬</div>크리에이터를 추가해보세요</div>';return;}
+  el.innerHTML=bd().creators.map(c=>`<div class="cr-card">
+    <div style="display:flex;justify-content:space-between;margin-bottom:7px">
+      <div><div class="cr-name">${c.name}</div><div class="cr-handle">${c.handle||''}</div></div>
+      <span class="badge ${sb[c.status]}">${sl[c.status]}</span>
+    </div>
+    <div class="cr-links">${c.ig?`<a class="cr-link" href="${c.ig}" target="_blank">IG ↗</a>`:''} ${c.tt?`<a class="cr-link" href="${c.tt}" target="_blank">TT ↗</a>`:''}</div>
+    ${c.content?`<div style="margin-bottom:5px"><span class="badge b-creator">${c.content}</span></div>`:''}
+    ${c.date?`<div style="font-size:11px;color:var(--text2);margin-bottom:4px">촬영: ${c.date}</div>`:''}
+    <div class="cr-fee">${c.fee?'₩'+c.fee.toLocaleString():'비용 미정'}</div>
+    ${c.memo?`<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.5">${c.memo}</div>`:''}
+    <div style="display:flex;gap:5px;margin-top:8px">
+      <button class="btn btn-g btn-sm" onclick="openCrModal('${c._id}')">편집</button>
+      <button class="btn btn-d btn-sm" onclick="delCr('${c._id}')">삭제</button>
+    </div>
+  </div>`).join('');
+}
+function delCr(id){if(!confirm('삭제?'))return;S.data[S.brand].creators=bd().creators.filter(c=>c._id!==id);dbDelete('creators',id);renderCreators();updateSidebar();}
+
+/* ════ BUDGET ════ */
+document.getElementById('btn-add-exp').addEventListener('click',()=>{
+  ['e-name','e-amount'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('e-month').value='5월';openOv('ov-exp');
+});
+document.getElementById('save-exp-btn').addEventListener('click',()=>{
+  const name=document.getElementById('e-name').value,month=document.getElementById('e-month').value,amount=parseInt(document.getElementById('e-amount').value)||0;
+  if(!name)return;
+  const expObj={_id:gid(),name,month,amount};
+  bd().expenses.push(expObj);
+  dbSave('expenses', expToDB(expObj, S.brand));
+  closeOv('ov-exp');renderBudget();updateSidebar();
+});
+function brandTotal(b){
+  const d=S.data[b];
+  const cr=d.creators.reduce((s,c)=>s+(c.fee||0),0);
+  const exp=d.expenses.reduce((s,e)=>s+(e.amount||0),0);
+  const mf=d.expenses.filter(e=>e.month==='매월').reduce((s,e)=>s+(e.amount||0),0);
+  return cr+exp+(mf*2);
+}
+function renderBudget(){
+  const d=bd();
+  const cr=d.creators.reduce((s,c)=>s+(c.fee||0),0),exp=d.expenses.reduce((s,e)=>s+(e.amount||0),0);
+  const mf=d.expenses.filter(e=>e.month==='매월').reduce((s,e)=>s+(e.amount||0),0);
+  document.getElementById('budget-stats').innerHTML=`
+    <div class="stat"><div class="sv" style="color:#c44d10">₩${cr.toLocaleString()}</div><div class="sl">크리에이터</div></div>
+    <div class="stat"><div class="sv" style="color:var(--leps)">₩${exp.toLocaleString()}</div><div class="sl">기타 비용</div></div>
+    <div class="stat"><div class="sv" style="color:#8a6200">₩${(mf*3).toLocaleString()}</div><div class="sl">매월 고정 (3개월)</div></div>
+    <div class="stat"><div class="sv">₩${(cr+exp+(mf*2)).toLocaleString()}</div><div class="sl">총 예상</div></div>`;
+  const sl={new:'미접촉',contact:'연락중',confirmed:'확정',done:'완료'};
+  const sb={new:'b-gray',contact:'b-recruit',confirmed:'b-ugc',done:'b-clean'};
+  document.getElementById('b-cr').innerHTML=!d.creators.length?
+    `<tr><td colspan="4" style="text-align:center;padding:14px;color:var(--text3)">없음</td></tr>`:
+    d.creators.map(c=>`<tr><td class="tdn">${c.name}</td><td style="font-size:11px">${c.date||'—'}</td><td style="font-family:'DM Mono',monospace;color:#c44d10">₩${(c.fee||0).toLocaleString()}</td><td><span class="badge ${sb[c.status]}">${sl[c.status]}</span></td></tr>`).join('');
+  document.getElementById('b-exp').innerHTML=!d.expenses.length?
+    `<tr><td colspan="4" style="text-align:center;padding:14px;color:var(--text3)">없음</td></tr>`:
+    d.expenses.map(e=>`<tr><td class="tdn">${e.name}</td><td>${e.month}</td><td style="font-family:'DM Mono',monospace;color:var(--leps)">₩${(e.amount||0).toLocaleString()}</td><td><button class="btn btn-d btn-xs" onclick="delExp('${e._id}')">×</button></td></tr>`).join('');
+}
+function delExp(id){S.data[S.brand].expenses=bd().expenses.filter(e=>e._id!==id);dbDelete('expenses',id);renderBudget();updateSidebar();}
+
+/* ════ SIDEBAR ════ */
+function updateSidebar(){
+  const labo=brandTotal('labo'),leps=brandTotal('leps'),nuri=brandTotal('nuri');
+  const grand=labo+leps+nuri;
+  document.getElementById('sidebar-grand-total').textContent='₩'+grand.toLocaleString();
+  document.getElementById('sidebar-brand-budgets').innerHTML=`
+    <div class="bb-row"><div class="bb-name"><div class="brand-dot bd-labo"></div>Laboreve</div><div class="bb-val" style="color:var(--labo)">₩${labo.toLocaleString()}</div></div>
+    <div class="bb-row"><div class="bb-name"><div class="brand-dot bd-leps"></div>LEPS</div><div class="bb-val" style="color:var(--leps)">₩${leps.toLocaleString()}</div></div>
+    <div class="bb-row"><div class="bb-name"><div class="brand-dot bd-nuri"></div>Nuriglow</div><div class="bb-val" style="color:var(--nuri)">₩${nuri.toLocaleString()}</div></div>`;
+  ['labo','leps','nuri'].forEach(b=>{
+    const total=S.data[b].slots.filter(s=>!['plan','recruit'].includes(s.type)).length;
+    document.getElementById('cnt-'+b).textContent=total;
+  });
+}
+
+
+
+/* ════ ACC TAGS ════ */
+S._accTags = [];
+function renderAccTags(){
+  const wrap = document.getElementById('acc-tags');
+  if(!wrap) return;
+  wrap.innerHTML = (S._accTags||[]).map((t,i)=>
+    `<span class="acc-tag">${t}<button onclick="removeAccTag(${i})" type="button">×</button></span>`
+  ).join('');
+}
+function removeAccTag(i){
+  S._accTags.splice(i,1);
+  renderAccTags();
+}
+document.addEventListener('keydown', e=>{
+  const inp = document.getElementById('acc-tag-input');
+  if(e.target !== inp) return;
+  if(e.key === 'Enter' || e.key === ','){
+    e.preventDefault();
+    const val = inp.value.trim().replace(/,$/,'');
+    if(val && !S._accTags.includes(val)){
+      if(!S._accTags) S._accTags = [];
+      S._accTags.push(val);
+      renderAccTags();
+    }
+    inp.value = '';
+  } else if(e.key === 'Backspace' && inp.value === '' && S._accTags.length){
+    S._accTags.pop();
+    renderAccTags();
+  }
+});
+
+/* ════ LEGEND ════ */
+const DEFAULT_LEGENDS = [
+  {id:'plan',   name:'기획',     color:'#8a6200', locked:false},
+  {id:'recruit',name:'섭외',     color:'#1a5a90', locked:false},
+  {id:'shoot',  name:'촬영일',   color:'#c8306a', locked:false},
+  {id:'ugc',    name:'UGC',      color:'#0a7050', locked:false},
+  {id:'meme',   name:'텍스트 밈',color:'#5030b8', locked:false},
+  {id:'creator',name:'크리에이터',color:'#c44d10',locked:false},
+];
+let LEGENDS = JSON.parse(localStorage.getItem('cp-legends')||'null') || DEFAULT_LEGENDS.map(l=>({...l}));
+
+function saveLegends(){ localStorage.setItem('cp-legends', JSON.stringify(LEGENDS)); }
+
+function renderLegend(){
+  const wrap = document.getElementById('legend-items');
+  if(!wrap) return;
+  wrap.innerHTML = LEGENDS.map((l,i)=>`
+    <div class="leg" style="position:relative" onmouseenter="this.querySelector('.leg-del').style.display='flex'" onmouseleave="this.querySelector('.leg-del').style.display='none'">
+      <div class="ldot" style="background:${l.color}"></div>
+      <span style="font-size:11px;color:var(--text2)">${l.name}</span>
+      <button class="leg-del" onclick="deleteLegend(${i})" style="display:none;position:absolute;right:-6px;top:-6px;width:14px;height:14px;border-radius:50%;background:#e24b4a;border:none;color:#fff;font-size:9px;cursor:pointer;align-items:center;justify-content:center;line-height:1">×</button>
+    </div>`).join('');
+  // sync shoot dot if exists
+  const sd = document.getElementById('leg-shoot-dot');
+  if(sd){ const sh=LEGENDS.find(l=>l.id==='shoot'); if(sh) sd.style.background=sh.color; }}
+
+function openLegendModal(){
+  renderLegendEditList();
+  openOv('ov-legend');
+}
+function renderLegendEditList(){
+  document.getElementById('legend-edit-list').innerHTML = LEGENDS.map((l,i)=>{
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:var(--rsm);border:1px solid var(--border)">'
+      + '<input type="color" value="'+l.color+'" onchange="changeLegendColor('+i+',this.value)" style="width:26px;height:26px;border:none;background:none;cursor:pointer;padding:0;border-radius:4px">'
+      + '<span style="flex:1;font-size:12px;font-weight:500">'+l.name+'</span>'
+      + '<button class="btn btn-d btn-xs" onclick="deleteLegend('+i+');renderLegendEditList()">삭제</button>'
+      + '</div>';
+  }).join('');
+}
+function changeLegendColor(i, color){
+  LEGENDS[i].color = color;
+  saveLegends(); renderLegend();
+}
+function deleteLegend(i){
+  if(!confirm(`'${LEGENDS[i].name}' 범례를 삭제할까요?`))return;
+  LEGENDS.splice(i,1);
+  saveLegends(); renderLegend();
+}
+function addLegendItem(){
+  const name = document.getElementById('leg-name-input').value.trim();
+  const color = document.getElementById('leg-color-input').value;
+  if(!name) return;
+  LEGENDS.push({id:'custom-'+Date.now(), name, color, locked:false});
+  saveLegends(); renderLegend(); renderLegendEditList();
+  document.getElementById('leg-name-input').value='';
+}
+
+
+/* ════ CONTEXT MENU ════ */
+let _ctxSlotId = null;
+
+function showCtxMenu(e, slotId) {
+  e.preventDefault();
+  e.stopPropagation();
+  _ctxSlotId = slotId;
+  const menu = document.getElementById('ctx-menu');
+  menu.style.display = 'block';
+  // Position
+  const x = Math.min(e.clientX, window.innerWidth - 180);
+  const y = Math.min(e.clientY, window.innerHeight - 160);
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+}
+
+function hideCtxMenu() {
+  document.getElementById('ctx-menu').style.display = 'none';
+  _ctxSlotId = null;
+}
+
+document.addEventListener('click', hideCtxMenu);
+document.addEventListener('keydown', e => { if(e.key === 'Escape') hideCtxMenu(); });
+
+function ctxAction(action) {
+  hideCtxMenu();
+  if(!_ctxSlotId) return;
+  const s = bd().slots.find(x => x._id === _ctxSlotId);
+  if(!s) return;
+  if(action === 'detail') {
+    openDayPop(s.date);
+  } else if(action === 'edit') {
+    openSlotEdit(_ctxSlotId);
+  } else if(action === 'duplicate') {
+    const newSlot = {...s, _id: gid()};
+    bd().slots.push(newSlot);
+    dbSave('slots', slotToDB(newSlot, S.brand));
+    renderCal();
+  } else if(action === 'move') {
+    const s = bd().slots.find(x => x._id === _ctxSlotId);
+    if(s) document.getElementById('move-date-input').value = s.date;
+    openOv('ov-move');
+    return;
+  } else if(action === 'delete') {
+    if(!confirm('이 슬롯을 삭제할까요?')) return;
+    S.data[S.brand].slots = bd().slots.filter(x => x._id !== _ctxSlotId);
+    dbDelete('slots', _ctxSlotId);
+    renderCal();
+  }
+}
+
+function confirmMove(){
+  const newDate = document.getElementById('move-date-input').value;
+  if(!newDate || !_ctxSlotId) return;
+  const s = bd().slots.find(x => x._id === _ctxSlotId);
+  if(!s) return;
+  s.date = newDate;
+  dbSave('slots', slotToDB(s, S.brand));
+  closeOv('ov-move');
+  _ctxSlotId = null;
+  renderCal();
+}
+
+
+/* ════ ACC TAGS ════ */
+let _accTags = [];
+function initAccTags(val){
+  _accTags = val ? val.split(',').map(s=>s.trim()).filter(Boolean) : [];
+  renderAccTags();
+}
+function renderAccTags(){
+  const wrap = document.getElementById('acc-tags');
+  if(!wrap) return;
+  wrap.innerHTML = _accTags.map((t,i)=>{
+    return '<span style="display:inline-flex;align-items:center;gap:3px;background:var(--bg4);border:1px solid var(--border2);border-radius:4px;padding:2px 6px;font-size:11px;color:var(--text)">'
+      + t + '<button onclick="_accTags.splice('+i+',1);renderAccTags()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;padding:0;line-height:1">&times;</button></span>';
+  }).join('');
+}
+function getAccTagsValue(){ return _accTags.join(', '); }
+document.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && e.target.id==='acc-tag-input'){
+    e.preventDefault();
+    const v = e.target.value.trim();
+    if(v && !_accTags.includes(v)){ _accTags.push(v); renderAccTags(); }
+    e.target.value = '';
+  }
+});
+
+/* ════ INIT ════ */
+// First seed local defaults, then load from DB (which may override with shared data)
+// Data loads from Supabase only
+['labo','leps','nuri'].forEach(b=>{ S.data[b].slots=[]; S.data[b].ugc=[]; S.data[b].creators=[]; S.data[b].expenses=[]; });
+switchBrand('labo');
+renderLegend();
+// Load from Supabase and setup realtime
+(async()=>{
+  await loadFromDB();
+  switchBrand('labo');
+  setupRealtime();
+  console.log('Supabase connected & realtime active!');
+})();
+</script>
+
+<!-- Legend Modal -->
+<div class="ov" id="ov-legend">
+  <div class="modal" style="width:420px">
+    <div class="mh">범례 관리<button class="xbtn" data-close="ov-legend">&times;</button></div>
+    <div class="mb2">
+      <div id="legend-edit-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+      <div style="border-top:1px solid var(--border);padding-top:12px">
+        <div style="font-size:11px;color:var(--text2);font-weight:500;margin-bottom:8px">새 범례 추가</div>
+        <div class="fg fg3" style="align-items:flex-end">
+          <div class="field" style="grid-column:span 2"><label>이름</label><input type="text" id="leg-name-input" placeholder="예: UGC 리뷰"></div>
+          <div class="field"><label>색상</label><input type="color" id="leg-color-input" value="#d4457a" style="height:34px;padding:2px 4px;cursor:pointer;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);width:100%"></div>
+        </div>
+        <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:8px" onclick="addLegendItem()">추가</button>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-g" data-close="ov-legend">닫기</button></div>
+  </div>
+</div>
+
+
+<!-- Context Menu -->
+<div class="ctx-menu" id="ctx-menu" style="display:none">
+  <button class="ctx-item" onclick="ctxAction('detail')">🔍 상세 보기</button>
+  <button class="ctx-item" onclick="ctxAction('edit')">✏️ 편집</button>
+  <button class="ctx-item" onclick="ctxAction('duplicate')">📋 복제</button>
+  <button class="ctx-item" onclick="ctxAction('move')">📅 날짜 이동</button>
+  <div class="ctx-divider"></div>
+  <button class="ctx-item danger" onclick="ctxAction('delete')">🗑️ 삭제</button>
+</div>
+
+<!-- Move Date Modal -->
+<div class="ov" id="ov-move">
+  <div class="modal" style="width:360px">
+    <div class="mh">날짜 이동<button class="xbtn" data-close="ov-move">&times;</button></div>
+    <div class="mb2">
+      <div class="field"><label>이동할 날짜</label><input type="date" id="move-date-input"></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-g" data-close="ov-move">취소</button>
+      <button class="btn btn-p" onclick="confirmMove()">이동</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
