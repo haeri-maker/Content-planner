@@ -719,7 +719,7 @@ const BRANDS = {
 /* ════ STATE ════ */
 const S = {
   brand: 'labo',
-  curM: 4, curY: 2025,
+  curM: new Date().getMonth(), curY: new Date().getFullYear(),
   data: { labo:{slots:[],ugc:[],creators:[],expenses:[]}, leps:{slots:[],ugc:[],creators:[],expenses:[]}, nuri:{slots:[],ugc:[],creators:[],expenses:[]} },
   editSlotId:null, editUgcId:null, editCrId:null, dayDate:null, importRows:[],
   ugcTab:'all', slotThumbData:null, ugcThumbData:null,
@@ -854,9 +854,9 @@ function calcNY(t){if(!t)return'';const[h,mn]=t.split(':').map(Number);let nh=(h
 function renderCal(){
   const m=S.curM,y=S.curY,slots=bd().slots;
   document.getElementById('m-lbl').textContent=ML[m]+' '+y;
-  const fd=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate(),today=new Date();
+  const rawFd=new Date(y,m,1).getDay(),fd=(rawFd+6)%7,dim=new Date(y,m+1,0).getDate(),today=new Date();
   let cells=[];for(let i=0;i<fd;i++)cells.push(null);for(let d=1;d<=dim;d++)cells.push(d);while(cells.length%7)cells.push(null);
-  let h='<div class="cal-grid"><div></div>'+['일','월','화','수','목','금','토'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  let h='<div class="cal-grid"><div></div>'+['월','화','수','목','금','토','일'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
   for(let w=0;w<cells.length/7;w++){
     const wk=cells.slice(w*7,w*7+7);
     h+=`<div class="wlbl">W${w+1}</div>`;
