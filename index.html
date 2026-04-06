@@ -295,13 +295,9 @@ select.fsel{background:var(--bg2);border:1px solid var(--border2);border-radius:
     </div>
   </div>
   <div class="brand-strip" id="brand-strip"></div>
-  <div class="legend">
-    <div class="leg"><div class="ldot" style="background:#8a6200"></div>기획</div>
-    <div class="leg"><div class="ldot" style="background:#1a5a90"></div>섭외</div>
-    <div class="leg"><div class="ldot" id="leg-shoot-dot"></div>촬영일</div>
-    <div class="leg"><div class="ldot" style="background:var(--nuri)"></div>UGC</div>
-    <div class="leg"><div class="ldot" style="background:var(--leps)"></div>텍스트 밈</div>
-    <div class="leg"><div class="ldot" style="background:#c44d10"></div>크리에이터</div>
+  <div id="legend-wrap" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+    <div id="legend-items" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"></div>
+    <button onclick="openLegendModal()" style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1px dashed var(--border2);background:transparent;color:var(--text2)">+ 범례 추가</button>
   </div>
   <div id="cal-wrap"></div>
 </div>
@@ -918,8 +914,20 @@ function openDayPop(date){
   const hasRec=bd().slots.some(s=>s.date===date&&s.type==='recruit');
   document.getElementById('day-title').textContent=date+' 상세';
   let h='';
-  if(hasPlan)h+=`<div style="margin-bottom:8px"><span class="badge b-plan">기획 주간</span></div>`;
-  if(hasRec)h+=`<div style="margin-bottom:8px"><span class="badge b-recruit">섭외 주간</span></div>`;
+  if(hasPlan){
+    const planSlots=bd().slots.filter(s=>s.date===date&&s.type==='plan');
+    h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span class="badge b-plan">기획 주간</span>
+      <button class="btn btn-d btn-xs" onclick="deleteTypeSlots('${date}','plan')">삭제</button>
+    </div>`;
+  }
+  if(hasRec){
+    const recSlots=bd().slots.filter(s=>s.date===date&&s.type==='recruit');
+    h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span class="badge b-recruit">섭외 주간</span>
+      <button class="btn btn-d btn-xs" onclick="deleteTypeSlots('${date}','recruit')">삭제</button>
+    </div>`;
+  }
   if(!slts.length&&!hasPlan&&!hasRec)h='<p style="color:var(--text3);font-size:12px">등록된 슬롯이 없어요.</p>';
   slts.forEach(s=>{
     const clip=s.ugcId?bd().ugc.find(u=>u.id===s.ugcId):null;
@@ -975,6 +983,13 @@ function openDayPop(date){
   openOv('ov-day');
 }
 function deleteSlot(id){if(!confirm('삭제?'))return;S.data[S.brand].slots=bd().slots.filter(s=>s._id!==id);dbDelete('slots',id);closeOv('ov-day');renderCal();}
+function deleteTypeSlots(date,type){
+  if(!confirm(`이 날 ${type==='plan'?'기획':'섭외'} 주간을 삭제할까요?`))return;
+  const toDelete=bd().slots.filter(s=>s.date===date&&s.type===type);
+  toDelete.forEach(s=>dbDelete('slots',s._id));
+  S.data[S.brand].slots=bd().slots.filter(s=>!(s.date===date&&s.type===type));
+  closeOv('ov-day');renderCal();
+}
 document.getElementById('day-add-btn').addEventListener('click',()=>{closeOv('ov-day');openSlotAdd(S.dayDate);});
 
 /* Slot modal */
@@ -1442,11 +1457,70 @@ function updateSidebar(){
   });
 }
 
+
+/* ════ LEGEND ════ */
+const DEFAULT_LEGENDS = [
+  {id:'plan',   name:'기획',     color:'#8a6200', locked:true},
+  {id:'recruit',name:'섭외',     color:'#1a5a90', locked:true},
+  {id:'shoot',  name:'촬영일',   color:'#c8306a', locked:true},
+  {id:'ugc',    name:'UGC',      color:'#0a7050', locked:true},
+  {id:'meme',   name:'텍스트 밈',color:'#5030b8', locked:true},
+  {id:'creator',name:'크리에이터',color:'#c44d10',locked:true},
+];
+let LEGENDS = JSON.parse(localStorage.getItem('cp-legends')||'null') || DEFAULT_LEGENDS.map(l=>({...l}));
+
+function saveLegends(){ localStorage.setItem('cp-legends', JSON.stringify(LEGENDS)); }
+
+function renderLegend(){
+  const wrap = document.getElementById('legend-items');
+  if(!wrap) return;
+  wrap.innerHTML = LEGENDS.map((l,i)=>`
+    <div class="leg" style="position:relative" onmouseenter="this.querySelector('.leg-del').style.display='flex'" onmouseleave="this.querySelector('.leg-del').style.display='none'">
+      <div class="ldot" style="background:${l.color}"></div>
+      <span style="font-size:11px;color:var(--text2)">${l.name}</span>
+      <button class="leg-del" onclick="deleteLegend(${i})" style="display:none;position:absolute;right:-6px;top:-6px;width:14px;height:14px;border-radius:50%;background:#e24b4a;border:none;color:#fff;font-size:9px;cursor:pointer;align-items:center;justify-content:center;line-height:1">×</button>
+    </div>`).join('');
+  // sync shoot dot if exists
+  const sd = document.getElementById('leg-shoot-dot');
+  if(sd){ const sh=LEGENDS.find(l=>l.id==='shoot'); if(sh) sd.style.background=sh.color; }
+}
+
+function openLegendModal(){
+  renderLegendEditList();
+  openOv('ov-legend');
+}
+function renderLegendEditList(){
+  document.getElementById('legend-edit-list').innerHTML = LEGENDS.map((l,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:var(--rsm);border:1px solid var(--border)">
+      <input type="color" value="${l.color}" onchange="changeLegendColor(${i},this.value)" style="width:26px;height:26px;border:none;background:none;cursor:pointer;padding:0;border-radius:4px">
+      <span style="flex:1;font-size:12px;font-weight:500">${l.name}</span>
+      ${l.locked?'<span style="font-size:10px;color:var(--text3)">기본</span>':`<button class="btn btn-d btn-xs" onclick="deleteLegend(${i});renderLegendEditList()">삭제</button>`}
+    </div>`).join('');
+}
+function changeLegendColor(i, color){
+  LEGENDS[i].color = color;
+  saveLegends(); renderLegend();
+}
+function deleteLegend(i){
+  if(LEGENDS[i].locked){ alert('기본 범례는 삭제할 수 없어요'); return; }
+  LEGENDS.splice(i,1);
+  saveLegends(); renderLegend();
+}
+function addLegendItem(){
+  const name = document.getElementById('leg-name-input').value.trim();
+  const color = document.getElementById('leg-color-input').value;
+  if(!name) return;
+  LEGENDS.push({id:'custom-'+Date.now(), name, color, locked:false});
+  saveLegends(); renderLegend(); renderLegendEditList();
+  document.getElementById('leg-name-input').value='';
+}
+
 /* ════ INIT ════ */
 // First seed local defaults, then load from DB (which may override with shared data)
 initLaboUGC();
 ['labo','leps','nuri'].forEach(b=>initSlots(b));
 switchBrand('labo');
+renderLegend();
 // Load from Supabase and setup realtime
 (async()=>{
   await loadFromDB();
@@ -1455,5 +1529,25 @@ switchBrand('labo');
   console.log('Supabase connected & realtime active!');
 })();
 </script>
+
+<!-- Legend Modal -->
+<div class="ov" id="ov-legend">
+  <div class="modal" style="width:420px">
+    <div class="mh">범례 관리<button class="xbtn" data-close="ov-legend">&times;</button></div>
+    <div class="mb2">
+      <div id="legend-edit-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+      <div style="border-top:1px solid var(--border);padding-top:12px">
+        <div style="font-size:11px;color:var(--text2);font-weight:500;margin-bottom:8px">새 범례 추가</div>
+        <div class="fg fg3" style="align-items:flex-end">
+          <div class="field" style="grid-column:span 2"><label>이름</label><input type="text" id="leg-name-input" placeholder="예: UGC 리뷰"></div>
+          <div class="field"><label>색상</label><input type="color" id="leg-color-input" value="#d4457a" style="height:34px;padding:2px 4px;cursor:pointer;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);width:100%"></div>
+        </div>
+        <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:8px" onclick="addLegendItem()">추가</button>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-g" data-close="ov-legend">닫기</button></div>
+  </div>
+</div>
+
 </body>
 </html>
