@@ -679,7 +679,7 @@ async function loadFromDB() {
       S.data[b].creators = creators.filter(r=>r.brand===b).map(crFromDB);
       S.data[b].expenses = expenses.filter(r=>r.brand===b).map(expFromDB);
     });
-    // All data comes from DB only — no auto-seeding
+    // Data loaded from Supabase successfully
   } catch(e) { console.error('loadFromDB error', e); }
   document.body.style.opacity='1';
 }
