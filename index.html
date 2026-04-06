@@ -734,7 +734,8 @@ function switchBrand(b) {
   root.setProperty('--accent-bd', cfg.bdColor);
   root.setProperty('--accent-soft', cfg.softColor);
   document.getElementById('brand-strip').style.background = cfg.color;
-  document.getElementById('leg-shoot-dot').style.background = cfg.color;
+  const legShoot = document.getElementById('leg-shoot-dot');
+  if(legShoot) legShoot.style.background = cfg.color;
   ['cal-brand-title','ugc-brand-title','cr-brand-title','budget-brand-title'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.textContent = cfg.name + ' ' + el.textContent.split(' ').slice(1).join(' ');
@@ -1476,8 +1477,7 @@ function renderLegend(){
     </div>`).join('');
   // sync shoot dot if exists
   const sd = document.getElementById('leg-shoot-dot');
-  if(sd){ const sh=LEGENDS.find(l=>l.id==='shoot'); if(sh) sd.style.background=sh.color; }
-}
+  if(sd){ const sh=LEGENDS.find(l=>l.id==='shoot'); if(sh) sd.style.background=sh.color; }}
 
 function openLegendModal(){
   renderLegendEditList();
