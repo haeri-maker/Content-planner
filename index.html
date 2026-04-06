@@ -988,11 +988,13 @@ function showCtx(e, id) {
   const y=Math.min(e.clientY, window.innerHeight-180);
   ctx.style.left=x+'px'; ctx.style.top=y+'px';
 }
-function hideCtx() { document.getElementById('ctx').style.display='none'; _ctxId=null; }
-document.addEventListener('click', hideCtx);
+function hideCtx() { document.getElementById('ctx').style.display='none'; }
+document.addEventListener('click', e => { if (!e.target.closest('#ctx')) hideCtx(); });
+let _moveId = null;
 function ctxDo(action) {
+  const id = _ctxId;   // 먼저 저장
   hideCtx();
-  const id=_ctxId; if(!id) return;
+  if(!id) return;
   const s=bd().slots.find(x=>x._id===id); if(!s) return;
   if(action==='detail') { openDayPop(s.date); }
   else if(action==='edit') { openSlotEdit(id); }
@@ -1003,8 +1005,8 @@ function ctxDo(action) {
     renderCal();
   }
   else if(action==='move') {
-    document.getElementById('move-date').value=s.date;
-    _ctxId=id;
+    _moveId = id;
+    document.getElementById('move-date').value = s.date;
     openOv('ov-move');
   }
   else if(action==='del') {
@@ -1015,11 +1017,11 @@ function ctxDo(action) {
 }
 function confirmMove() {
   const newDate=document.getElementById('move-date').value;
-  if(!newDate||!_ctxId) return;
-  const s=bd().slots.find(x=>x._id===_ctxId); if(!s) return;
+  if(!newDate||!_moveId) return;
+  const s=bd().slots.find(x=>x._id===_moveId); if(!s) return;
   s.date=newDate;
   dbSave('slots',s2db(s,S.brand));
-  closeOv('ov-move'); _ctxId=null; renderCal();
+  closeOv('ov-move'); _moveId=null; _ctxId=null; renderCal();
 }
 
 /* ══ CREATORS ══ */
