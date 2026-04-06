@@ -238,6 +238,10 @@ select.fsel{background:var(--bg2);border:1px solid var(--border2);border-radius:
 .ctx-item.danger{color:#b03030}
 .ctx-item.danger:hover{background:rgba(176,48,48,.07)}
 .ctx-divider{height:1px;background:var(--border);margin:3px 0}
+
+.acc-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-bd);border-radius:20px;font-size:11px;font-weight:500}
+.acc-tag button{background:none;border:none;cursor:pointer;color:var(--accent);font-size:12px;padding:0;line-height:1;opacity:.7}
+.acc-tag button:hover{opacity:1}
 .import-zone{border:2px dashed var(--border2);border-radius:var(--r);padding:24px;text-align:center;cursor:pointer;transition:all .2s;color:var(--text3)}
 .import-zone:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
 </style>
@@ -315,7 +319,7 @@ select.fsel{background:var(--bg2);border:1px solid var(--border2);border-radius:
   <div class="ph">
     <div>
       <div class="pt" id="ugc-brand-title">Laboreve UGC</div>
-      <div class="ps">총 <span id="ugc-cnt">0</span>개 · 원본 + 클린본(_cl_) + 시드</div>
+      <div class="ps">총 <span id="ugc-cnt">0</span>개</div>
     </div>
     <div class="row">
       <input class="search-bar" id="ugc-search" placeholder="검색...">
@@ -338,7 +342,6 @@ select.fsel{background:var(--bg2);border:1px solid var(--border2);border-radius:
           <th style="width:30px">#</th>
           <th style="width:44px">썸네일</th>
           <th>클립 ID</th>
-          <th>출연자</th>
           <th>콘텐츠 유형</th>
           <th>퀄리티</th>
           <th>드라이브</th>
@@ -486,9 +489,8 @@ select.fsel{background:var(--bg2);border:1px solid var(--border2);border-radius:
   <div class="modal modal-lg">
     <div class="mh"><span id="ugc-modal-title">UGC 클립 추가</span><button class="xbtn" data-close="ov-ugc">×</button></div>
     <div class="mb2">
-      <div class="fg fg2">
+      <div class="fg fg1">
         <div class="field"><label>클립 ID</label><input type="text" id="u-id"></div>
-        <div class="field"><label>출연자 핸들</label><input type="text" id="u-handle"></div>
       </div>
       <div class="fg fg2">
         <div class="field"><label>콘텐츠 유형</label><input type="text" id="u-type"></div>
@@ -515,7 +517,12 @@ select.fsel{background:var(--bg2);border:1px solid var(--border2);border-radius:
         <div class="field"><label>사용 여부</label>
           <select id="u-used"><option value="no">미사용</option><option value="yes">사용됨</option><option value="editing">편집중</option></select>
         </div>
-        <div class="field"><label>사용 계정</label><input type="text" id="u-acc"></div>
+        <div class="field"><label>사용 계정 (엔터로 추가)</label>
+          <div id="acc-tags-wrap" style="display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);min-height:36px;cursor:text" onclick="document.getElementById('acc-tag-input').focus()">
+            <div id="acc-tags" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+            <input type="text" id="acc-tag-input" placeholder="계정 입력 후 엔터..." style="border:none;background:none;outline:none;font-size:12px;font-family:'DM Sans',sans-serif;min-width:120px;color:var(--text)">
+          </div>
+        </div>
       </div>
       <div class="fg fg2">
         <div class="field"><label>업로드 예정일</label><input type="date" id="u-date"></div>
@@ -1252,19 +1259,22 @@ function openUgcModal(id){
   S.editUgcId=id;S.ugcThumbData=null;clearUgcThumb();
   document.getElementById('ugc-modal-title').textContent=id?'UGC 클립 편집':'UGC 클립 추가';
   const u=id?bd().ugc.find(x=>x._id===id):null;
-  ['u-id','u-handle','u-type','u-drive','u-acc','u-date','u-product','u-memo'].forEach(fid=>{
-    const k={['u-id']:'id',['u-handle']:'h',['u-type']:'ct',['u-drive']:'drive',['u-acc']:'acc',['u-date']:'date',['u-product']:'product',['u-memo']:'memo'}[fid];
+  ['u-id','u-type','u-drive','u-date','u-product','u-memo'].forEach(fid=>{
+    const k={['u-id']:'id',['u-type']:'ct',['u-drive']:'drive',['u-date']:'date',['u-product']:'product',['u-memo']:'memo'}[fid];
     document.getElementById(fid).value=u?.[k]||'';
   });
   document.getElementById('u-q').value=u?.q||3;document.getElementById('u-used').value=u?.used||'no';
   if(u?.thumb)applyThumbUgc(u.thumb);
+  // 사용 계정 태그 초기화
+  S._accTags = u?.acc ? u.acc.split(',').map(a=>a.trim()).filter(Boolean) : [];
+  renderAccTags();
   openOv('ov-ugc');
 }
 document.getElementById('save-ugc-btn').addEventListener('click',()=>{
-  const data={id:document.getElementById('u-id').value,h:document.getElementById('u-handle').value,
+  const data={id:document.getElementById('u-id').value,h:'',
     ct:document.getElementById('u-type').value,q:parseInt(document.getElementById('u-q').value)||3,
     drive:document.getElementById('u-drive').value,thumb:S.ugcThumbData||'',
-    used:document.getElementById('u-used').value,acc:document.getElementById('u-acc').value,
+    used:document.getElementById('u-used').value,acc:(S._accTags||[]).join(', '),
     date:document.getElementById('u-date').value,product:document.getElementById('u-product').value,
     memo:document.getElementById('u-memo').value,
     cl:document.getElementById('u-id').value.includes('_cl_'),
@@ -1298,12 +1308,11 @@ function renderUGC(){
       <td>${u.thumb?`<img class="tbl-thumb" src="${u.thumb}" alt="">`:
         `<label class="tbl-thumb-upload" title="썸네일 업로드">📸<input type="file" accept="image/*" style="display:none" onchange="uploadThumbForUgc('${u._id}',this)"></label>`}</td>
       <td class="tdn" style="font-size:11px;line-height:1.5;max-width:180px">${u.cl?`<span class="clean-mark">클린본</span>`:''}${u.id}</td>
-      <td style="font-size:11px">${u.h}</td>
       <td><span class="b-gray badge" style="font-size:9.5px">${u.ct}</span></td>
       <td>${starsH(u.q)}</td>
       <td>${u.drive?`<a href="${u.drive}" target="_blank">드라이브 ↗</a>`:'—'}</td>
       <td><span class="badge ${ub[u.used]||'b-gray'}">${ul[u.used]||'—'}</span></td>
-      <td style="font-size:10.5px">${u.acc?u.acc.split(',').map(a=>`<span class="used-tag">${a.trim()}</span>`).join(''):'—'}</td>
+      <td style="font-size:10.5px">${u.acc?u.acc.split(',').map(a=>`<span class="acc-tag" style="font-size:9.5px">${a.trim()}</span>`).join(''):'—'}</td>
       <td style="font-family:'DM Mono',monospace;font-size:10.5px">${u.date||'—'}</td>
       <td style="font-size:10.5px;max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.memo||'—'}</td>
       <td><div style="display:flex;gap:3px">
@@ -1453,14 +1462,46 @@ function updateSidebar(){
 }
 
 
+
+/* ════ ACC TAGS ════ */
+S._accTags = [];
+function renderAccTags(){
+  const wrap = document.getElementById('acc-tags');
+  if(!wrap) return;
+  wrap.innerHTML = (S._accTags||[]).map((t,i)=>
+    `<span class="acc-tag">${t}<button onclick="removeAccTag(${i})" type="button">×</button></span>`
+  ).join('');
+}
+function removeAccTag(i){
+  S._accTags.splice(i,1);
+  renderAccTags();
+}
+document.addEventListener('keydown', e=>{
+  const inp = document.getElementById('acc-tag-input');
+  if(e.target !== inp) return;
+  if(e.key === 'Enter' || e.key === ','){
+    e.preventDefault();
+    const val = inp.value.trim().replace(/,$/,'');
+    if(val && !S._accTags.includes(val)){
+      if(!S._accTags) S._accTags = [];
+      S._accTags.push(val);
+      renderAccTags();
+    }
+    inp.value = '';
+  } else if(e.key === 'Backspace' && inp.value === '' && S._accTags.length){
+    S._accTags.pop();
+    renderAccTags();
+  }
+});
+
 /* ════ LEGEND ════ */
 const DEFAULT_LEGENDS = [
-  {id:'plan',   name:'기획',     color:'#8a6200', locked:true},
-  {id:'recruit',name:'섭외',     color:'#1a5a90', locked:true},
-  {id:'shoot',  name:'촬영일',   color:'#c8306a', locked:true},
-  {id:'ugc',    name:'UGC',      color:'#0a7050', locked:true},
-  {id:'meme',   name:'텍스트 밈',color:'#5030b8', locked:true},
-  {id:'creator',name:'크리에이터',color:'#c44d10',locked:true},
+  {id:'plan',   name:'기획',     color:'#8a6200', locked:false},
+  {id:'recruit',name:'섭외',     color:'#1a5a90', locked:false},
+  {id:'shoot',  name:'촬영일',   color:'#c8306a', locked:false},
+  {id:'ugc',    name:'UGC',      color:'#0a7050', locked:false},
+  {id:'meme',   name:'텍스트 밈',color:'#5030b8', locked:false},
+  {id:'creator',name:'크리에이터',color:'#c44d10',locked:false},
 ];
 let LEGENDS = JSON.parse(localStorage.getItem('cp-legends')||'null') || DEFAULT_LEGENDS.map(l=>({...l}));
 
@@ -1488,7 +1529,7 @@ function renderLegendEditList(){
     <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:var(--rsm);border:1px solid var(--border)">
       <input type="color" value="${l.color}" onchange="changeLegendColor(${i},this.value)" style="width:26px;height:26px;border:none;background:none;cursor:pointer;padding:0;border-radius:4px">
       <span style="flex:1;font-size:12px;font-weight:500">${l.name}</span>
-      ${l.locked?'<span style="font-size:10px;color:var(--text3)">기본</span>':`<button class="btn btn-d btn-xs" onclick="deleteLegend(${i});renderLegendEditList()">삭제</button>`}
+      `<button class="btn btn-d btn-xs" onclick="deleteLegend(${i});renderLegendEditList()">삭제</button>`
     </div>`).join('');
 }
 function changeLegendColor(i, color){
@@ -1496,7 +1537,7 @@ function changeLegendColor(i, color){
   saveLegends(); renderLegend();
 }
 function deleteLegend(i){
-  if(LEGENDS[i].locked){ alert('기본 범례는 삭제할 수 없어요'); return; }
+  if(!confirm(`'${LEGENDS[i].name}' 범례를 삭제할까요?`))return;
   LEGENDS.splice(i,1);
   saveLegends(); renderLegend();
 }
@@ -1548,6 +1589,11 @@ function ctxAction(action) {
     bd().slots.push(newSlot);
     dbSave('slots', slotToDB(newSlot, S.brand));
     renderCal();
+  } else if(action === 'move') {
+    const s = bd().slots.find(x => x._id === _ctxSlotId);
+    if(s) document.getElementById('move-date-input').value = s.date;
+    openOv('ov-move');
+    return;
   } else if(action === 'delete') {
     if(!confirm('이 슬롯을 삭제할까요?')) return;
     S.data[S.brand].slots = bd().slots.filter(x => x._id !== _ctxSlotId);
@@ -1555,6 +1601,43 @@ function ctxAction(action) {
     renderCal();
   }
 }
+
+function confirmMove(){
+  const newDate = document.getElementById('move-date-input').value;
+  if(!newDate || !_ctxSlotId) return;
+  const s = bd().slots.find(x => x._id === _ctxSlotId);
+  if(!s) return;
+  s.date = newDate;
+  dbSave('slots', slotToDB(s, S.brand));
+  closeOv('ov-move');
+  _ctxSlotId = null;
+  renderCal();
+}
+
+
+/* ════ ACC TAGS ════ */
+let _accTags = [];
+function initAccTags(val){
+  _accTags = val ? val.split(',').map(s=>s.trim()).filter(Boolean) : [];
+  renderAccTags();
+}
+function renderAccTags(){
+  const wrap = document.getElementById('acc-tags');
+  if(!wrap) return;
+  wrap.innerHTML = _accTags.map((t,i)=>`
+    <span style="display:inline-flex;align-items:center;gap:3px;background:var(--bg4);border:1px solid var(--border2);border-radius:4px;padding:2px 6px;font-size:11px;color:var(--text)">
+      ${t}<button onclick="_accTags.splice(${i},1);renderAccTags()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:11px;padding:0;line-height:1">×</button>
+    </span>`).join('');
+}
+function getAccTagsValue(){ return _accTags.join(', '); }
+document.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && e.target.id==='acc-tag-input'){
+    e.preventDefault();
+    const v = e.target.value.trim();
+    if(v && !_accTags.includes(v)){ _accTags.push(v); renderAccTags(); }
+    e.target.value = '';
+  }
+});
 
 /* ════ INIT ════ */
 // First seed local defaults, then load from DB (which may override with shared data)
@@ -1596,8 +1679,23 @@ renderLegend();
   <button class="ctx-item" onclick="ctxAction('detail')">🔍 상세 보기</button>
   <button class="ctx-item" onclick="ctxAction('edit')">✏️ 편집</button>
   <button class="ctx-item" onclick="ctxAction('duplicate')">📋 복제</button>
+  <button class="ctx-item" onclick="ctxAction('move')">📅 날짜 이동</button>
   <div class="ctx-divider"></div>
   <button class="ctx-item danger" onclick="ctxAction('delete')">🗑️ 삭제</button>
+</div>
+
+<!-- Move Date Modal -->
+<div class="ov" id="ov-move">
+  <div class="modal" style="width:360px">
+    <div class="mh">날짜 이동<button class="xbtn" data-close="ov-move">&times;</button></div>
+    <div class="mb2">
+      <div class="field"><label>이동할 날짜</label><input type="date" id="move-date-input"></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-g" data-close="ov-move">취소</button>
+      <button class="btn btn-p" onclick="confirmMove()">이동</button>
+    </div>
+  </div>
 </div>
 </body>
 </html>
