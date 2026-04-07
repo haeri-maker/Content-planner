@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>콘텐츠 플래너</title>
+<title>📅 콘텐츠 플래너</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -207,17 +208,17 @@ td.tdn{color:var(--tx)}
   <div class="sb-logo">
     <div class="sb-logo-t">콘텐츠 플래너</div>
     <div class="brand-btns">
-      <button class="bb" id="bb-labo" onclick="switchBrand('labo')">
-        <div class="bdot" style="background:var(--labo)"></div>Laboreve
-        <span class="bcnt" id="cnt-labo">0</span>
+      <button class="bb" id="bb-nuri" onclick="switchBrand('nuri')">
+        <div class="bdot" style="background:var(--nuri)"></div>Nuriglow
+        <span class="bcnt" id="cnt-nuri">0</span>
       </button>
       <button class="bb" id="bb-leps" onclick="switchBrand('leps')">
         <div class="bdot" style="background:var(--leps)"></div>LEPS
         <span class="bcnt" id="cnt-leps">0</span>
       </button>
-      <button class="bb" id="bb-nuri" onclick="switchBrand('nuri')">
-        <div class="bdot" style="background:var(--nuri)"></div>Nuriglow
-        <span class="bcnt" id="cnt-nuri">0</span>
+      <button class="bb" id="bb-labo" onclick="switchBrand('labo')">
+        <div class="bdot" style="background:var(--labo)"></div>Laboreve
+        <span class="bcnt" id="cnt-labo">0</span>
       </button>
     </div>
   </div>
@@ -1269,9 +1270,9 @@ function updateSB() {
 /* ══ INIT ══ */
 (async ()=>{
   renderLeg();
-  switchBrand('labo');
+  switchBrand('nuri');
   await loadDB();
-  switchBrand('labo');
+  switchBrand('nuri');
   setupRT();
 })();
 
