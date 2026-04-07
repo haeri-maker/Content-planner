@@ -348,12 +348,10 @@ td.tdn{color:var(--tx)}
         <div class="field"><label>🎵 TT 업로드 링크</label><input type="url" id="s-ref-tt" placeholder="https://tiktok.com/@.../video/..."></div>
       </div>
       <div style="margin-bottom:10px;border:1px solid var(--bd);border-radius:var(--r);overflow:hidden">
-        <div style="padding:8px 12px;background:var(--bg3);border-bottom:1px solid var(--bd);font-size:10.5px;font-weight:600;color:var(--tx)">📊 조회수</div>
-        <div style="padding:10px 12px;display:grid;grid-template-columns:1fr;gap:7px">
-          <div class="field"><label>총 조회수 (Views)</label><input type="number" id="s-views" min="0" placeholder="0"></div>
-        </div>
+
         <div style="padding:8px 12px;background:var(--bg3);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);font-size:10.5px;font-weight:600;color:#c8306a">📸 Instagram 인터렉션</div>
-        <div style="padding:10px 12px;display:grid;grid-template-columns:repeat(5,1fr);gap:7px">
+        <div style="padding:10px 12px;display:grid;grid-template-columns:repeat(6,1fr);gap:7px">
+          <div class="field"><label>조회수</label><input type="number" id="ig-views" min="0" placeholder="0"></div>
           <div class="field"><label>좋아요</label><input type="number" id="ig-like" min="0" placeholder="0"></div>
           <div class="field"><label>댓글</label><input type="number" id="ig-comment" min="0" placeholder="0"></div>
           <div class="field"><label>공유</label><input type="number" id="ig-share" min="0" placeholder="0"></div>
@@ -361,7 +359,8 @@ td.tdn{color:var(--tx)}
           <div class="field"><label>리포스트</label><input type="number" id="ig-repost" min="0" placeholder="0"></div>
         </div>
         <div style="padding:8px 12px;background:var(--bg3);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);font-size:10.5px;font-weight:600;color:#111">🎵 TikTok 인터렉션</div>
-        <div style="padding:10px 12px;display:grid;grid-template-columns:repeat(3,1fr);gap:7px">
+        <div style="padding:10px 12px;display:grid;grid-template-columns:repeat(4,1fr);gap:7px">
+          <div class="field"><label>조회수</label><input type="number" id="tt-views" min="0" placeholder="0"></div>
           <div class="field"><label>좋아요</label><input type="number" id="tt-like" min="0" placeholder="0"></div>
           <div class="field"><label>댓글</label><input type="number" id="tt-comment" min="0" placeholder="0"></div>
           <div class="field"><label>저장</label><input type="number" id="tt-save" min="0" placeholder="0"></div>
@@ -530,7 +529,7 @@ function s2db(s, brand) {
 function safeJSON(v){try{return v?JSON.parse(v):{};}catch{return{};}} 
 function db2s(r) {
   return { _id: r.id, date: r.date||'', type: r.type||'ugc', typeCustom: r.type_custom||'',
-    title: r.title||'', time: r.time||'', ref: r.ref||'', igUrl: r.ig_url||'', ttUrl: r.tt_url||'', views: r.views||0, igStats: safeJSON(r.ig_stats), ttStats: safeJSON(r.tt_stats), thumb: r.thumb||'',
+    title: r.title||'', time: r.time||'', ref: r.ref||'', igUrl: r.ig_url||'', ttUrl: r.tt_url||'', igStats: safeJSON(r.ig_stats), ttStats: safeJSON(r.tt_stats), thumb: r.thumb||'',
     shootLocation: r.shoot_location||'', shootDirector: r.shoot_director||'',
     shootCreators: r.shoot_creators||[], memo: r.memo||'',
     content: r.content||'', product: r.product||'', uploadUrl: r.upload_url||'' };
@@ -835,8 +834,8 @@ function renderCal() {
           const disp = s.typeCustom || tlbl(s.type);
           const chipStyle = `background:var(--a-bg);color:var(--a);border:0.5px solid var(--a-bd)`;
           const ig=s.igStats||{}, tt=s.ttStats||{};
-          const hasIg=ig.like||ig.comment||ig.share||ig.save||ig.repost;
-          const hasTt=tt.like||tt.comment||tt.save;
+          const hasIg=ig.views||ig.like||ig.comment||ig.share||ig.save||ig.repost;
+          const hasTt=tt.views||tt.like||tt.comment||tt.save;
           let extra = '';
           // 레퍼런스 링크 CTA (맨 위, 값 있을 때만)
           if(s.ref) extra += `<a href="${s.ref}" target="_blank" onclick="event.stopPropagation()" style="display:block;text-align:center;margin-top:3px;padding:3px 0;background:var(--a-bg);color:var(--a);border:1px solid var(--a-bd);border-radius:5px;font-size:9.5px;font-weight:700;text-decoration:none">🔗 레퍼런스</a>`;
@@ -859,8 +858,8 @@ function renderCal() {
           }
           // 인터렉션 수치
           if(s.views) extra += `<div style="margin-top:3px;padding:3px 5px;background:rgba(0,0,0,.06);border-radius:3px;font-size:9.5px;color:var(--tx);font-weight:600;line-height:1.9">👁 ${Number(s.views).toLocaleString()}</div>`;
-          if(hasIg) extra += `<div style="margin-top:2px;padding:3px 5px;background:rgba(200,48,106,.08);border-radius:3px;font-size:9.5px;color:#c8306a;line-height:1.9">❤️${ig.like||0} 💬${ig.comment||0} ↗${ig.share||0} 🔖${ig.save||0} 🔁${ig.repost||0}</div>`;
-          if(hasTt) extra += `<div style="margin-top:2px;padding:3px 5px;background:rgba(0,0,0,.05);border-radius:3px;font-size:9.5px;color:#333;line-height:1.9">❤️${tt.like||0} 💬${tt.comment||0} 🔖${tt.save||0}</div>`;
+          if(hasIg) extra += `<div style="margin-top:2px;padding:3px 5px;background:rgba(200,48,106,.08);border-radius:3px;font-size:9.5px;color:#c8306a;line-height:1.9">${ig.views?`👁${Number(ig.views).toLocaleString()} `:''}❤️${ig.like||0} 💬${ig.comment||0} ↗${ig.share||0} 🔖${ig.save||0} 🔁${ig.repost||0}</div>`;
+          if(hasTt) extra += `<div style="margin-top:2px;padding:3px 5px;background:rgba(0,0,0,.05);border-radius:3px;font-size:9.5px;color:#333;line-height:1.9">${tt.views?`👁${Number(tt.views).toLocaleString()} `:''}❤️${tt.like||0} 💬${tt.comment||0} 🔖${tt.save||0}</div>`;
           inner += `<div class="chip" data-sid="${s._id}" style="${chipStyle}" oncontextmenu="showCtx(event,'${s._id}')">${disp}${extra}</div>`;
         }
       });
@@ -929,7 +928,6 @@ function openDayPop(date) {
         ${s.typeCustom?`<div class="sp-row"><div class="sp-lbl">유형</div><div class="sp-val">${s.typeCustom}</div></div>`:''}
         ${s.content?`<div class="sp-row"><div class="sp-lbl">내용</div><div class="sp-val" style="white-space:pre-line">${s.content}</div></div>`:''}
         ${s.product?`<div class="sp-row"><div class="sp-lbl">제품</div><div class="sp-val" style="white-space:pre-line">📦 ${s.product}</div></div>`:''}
-        ${s.views?`<div class="sp-row"><div class="sp-lbl">조회수</div><div class="sp-val" style="font-size:14px;font-weight:700">👁 ${Number(s.views).toLocaleString()}</div></div>`:''}
         ${s.time?`<div class="sp-row"><div class="sp-lbl">업로드</div><div class="sp-val">${s.time} KST · NY ${calcNY(s.time)}</div></div>`:''}
         ${s.ref?`<div class="sp-row"><div class="sp-lbl">레퍼런스</div><div class="sp-val"><a href="${s.ref}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;background:var(--a-bg);color:var(--a);border:1px solid var(--a-bd);border-radius:20px;font-weight:600;font-size:11px;text-decoration:none">🔗 레퍼런스 링크 ↗</a></div></div>`:''}
         ${s.igUrl||s.ttUrl?`<div class="sp-row"><div class="sp-lbl">업로드</div><div class="sp-val" style="display:flex;gap:7px;flex-wrap:wrap">
@@ -985,8 +983,7 @@ function openSlotAdd(date) {
   document.getElementById('s-date').value=date||'';
   document.getElementById('s-type').value='ugc';
   document.getElementById('s-time').value='10:00';
-  const sv=document.getElementById('s-views');if(sv)sv.value='';
-  ['ig-like','ig-comment','ig-share','ig-save','ig-repost','tt-like','tt-comment','tt-save'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); 
+  ['ig-views','ig-like','ig-comment','ig-share','ig-save','ig-repost','tt-views','tt-like','tt-comment','tt-save'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   openOv('ov-slot');
 }
 function openSlotEdit(id) {
@@ -1003,10 +1000,9 @@ function openSlotEdit(id) {
   document.getElementById('s-content').value=s.content||'';
   document.getElementById('s-product').value=s.product||'';
   if(s.thumb) applySlotThumb(s.thumb); else clearSlotThumb();
-  const sv=document.getElementById('s-views');if(sv)sv.value=s.views||'';
   const ig=s.igStats||{}, tt=s.ttStats||{};
-  ['like','comment','share','save','repost'].forEach(k=>{const el=document.getElementById('ig-'+k);if(el)el.value=ig[k]||'';});
-  ['like','comment','save'].forEach(k=>{const el=document.getElementById('tt-'+k);if(el)el.value=tt[k]||'';}); 
+  ['views','like','comment','share','save','repost'].forEach(k=>{const el=document.getElementById('ig-'+k);if(el)el.value=ig[k]||'';});
+  ['views','like','comment','save'].forEach(k=>{const el=document.getElementById('tt-'+k);if(el)el.value=tt[k]||'';});
   closeOv('ov-day'); openOv('ov-slot');
 }
 // textarea: Enter=기본동작유지(줄바꿈), 폼제출방지
@@ -1035,8 +1031,8 @@ document.getElementById('save-slot-btn').addEventListener('click', () => {
     content: _content,
     product: document.getElementById('s-product').value,
     thumb: S.slotThumb||'',
-    views: parseInt(document.getElementById('s-views')?.value)||0,
     igStats: {
+      views:   parseInt(document.getElementById('ig-views')?.value)||0,
       like:    parseInt(document.getElementById('ig-like')?.value)||0,
       comment: parseInt(document.getElementById('ig-comment')?.value)||0,
       share:   parseInt(document.getElementById('ig-share')?.value)||0,
@@ -1044,6 +1040,7 @@ document.getElementById('save-slot-btn').addEventListener('click', () => {
       repost:  parseInt(document.getElementById('ig-repost')?.value)||0,
     },
     ttStats: {
+      views:   parseInt(document.getElementById('tt-views')?.value)||0,
       like:    parseInt(document.getElementById('tt-like')?.value)||0,
       comment: parseInt(document.getElementById('tt-comment')?.value)||0,
       save:    parseInt(document.getElementById('tt-save')?.value)||0,
@@ -1348,21 +1345,20 @@ function renderThumbBox(brand, offset, containerId) {
     const ig = s.igStats||{}, tt = s.ttStats||{};
     const hasIg = ig.like||ig.comment||ig.share||ig.save||ig.repost;
     const hasTt = tt.like||tt.comment||tt.save;
-    const viewRow = s.views ? `<div style="margin-top:6px;padding:5px 8px;background:var(--bg3);border-radius:6px;font-size:12px;font-weight:700;color:var(--tx)">👁 ${Number(s.views).toLocaleString()} views</div>` : '';
-    const igRow = hasIg ? `<div style="margin-top:5px;padding:6px 8px;background:#faedf3;border-radius:6px;color:#c8306a;line-height:1.9">
+    const igRow = hasIg ? `<div style="margin-top:6px;padding:6px 8px;background:#faedf3;border-radius:6px;color:#c8306a;line-height:1.9">
         <div style="font-size:11px;font-weight:700;margin-bottom:3px">📸 Instagram</div>
-        <div style="font-size:11px;white-space:nowrap">❤️ ${ig.like||0} &nbsp;💬 ${ig.comment||0} &nbsp;↗ ${ig.share||0} &nbsp;🔖 ${ig.save||0} &nbsp;🔁 ${ig.repost||0}</div>
+        <div style="font-size:11px;white-space:nowrap">${ig.views?`👁 ${Number(ig.views).toLocaleString()} &nbsp;`:''}❤️ ${ig.like||0} &nbsp;💬 ${ig.comment||0} &nbsp;↗ ${ig.share||0} &nbsp;🔖 ${ig.save||0} &nbsp;🔁 ${ig.repost||0}</div>
       </div>` : '';
     const ttRow = hasTt ? `<div style="margin-top:4px;padding:6px 8px;background:#f0f0f0;border-radius:6px;color:#333;line-height:1.9">
         <div style="font-size:11px;font-weight:700;margin-bottom:3px">🎵 TikTok</div>
-        <div style="font-size:11px;white-space:nowrap">❤️ ${tt.like||0} &nbsp;💬 ${tt.comment||0} &nbsp;🔖 ${tt.save||0}</div>
+        <div style="font-size:11px;white-space:nowrap">${tt.views?`👁 ${Number(tt.views).toLocaleString()} &nbsp;`:''}❤️ ${tt.like||0} &nbsp;💬 ${tt.comment||0} &nbsp;🔖 ${tt.save||0}</div>
       </div>` : '';
     const contentLines = (s.content||s.title||'').split(String.fromCharCode(10)).join('<br>'); const productLines = s.product ? s.product.split(String.fromCharCode(10)).join('<br>') : '';
     return `<div style="min-width:${minW}px;flex:1;max-width:${Math.max(minW+60, 240)}px">
       <img src="${s.thumb}" style="width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:8px;border:1px solid var(--bd);display:block">
       ${contentLines?`<div style="font-size:12px;color:var(--tx);margin-top:5px;line-height:1.5;font-weight:500">${contentLines}</div>`:''}
       ${productLines?`<div style="font-size:11px;color:var(--tx2);margin-top:2px;line-height:1.5">📦 ${productLines}</div>`:''}
-      ${viewRow}${igRow}${ttRow}
+      ${igRow}${ttRow}
     </div>`;
   }).join('');
 }
