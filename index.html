@@ -116,7 +116,7 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
 .cell-thumb-zone:hover{border-color:var(--a);color:var(--a);background:var(--a-bg)}
 .chip{border-radius:4px;padding:2px 5px;margin-bottom:2px;font-size:9px;font-weight:500;display:block;line-height:1.35;cursor:pointer;transition:filter .1s}
 .chip:hover{filter:brightness(.92)}
-.chip-content{font-size:8px;color:var(--tx2);margin-top:1px;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}
+.chip-content{font-size:9px;color:var(--tx2);margin-top:2px;white-space:normal;line-height:1.4;word-break:keep-all}
 .chip-product{font-size:9.5px;color:var(--tx);margin-top:2px;white-space:normal;line-height:1.4;font-weight:500}
 .chip-ref{font-size:9px;display:inline-flex;align-items:center;margin-top:2px;margin-right:3px;text-decoration:none;padding:2px 6px;border-radius:3px;background:rgba(0,0,0,.06);font-weight:500}
 .wbar{font-size:8.5px;font-weight:600;text-transform:uppercase;padding:1px 4px;border-radius:3px;display:inline-block;margin-bottom:2px;letter-spacing:.04em}
@@ -822,19 +822,24 @@ function renderCal() {
         } else {
           const disp = s.typeCustom || tlbl(s.type);
           const chipStyle = `background:var(--a-bg);color:var(--a);border:0.5px solid var(--a-bd)`;
-          let extra = '';
-          if(s.content) extra += `<div class="chip-content">${s.content}</div>`;
-          if(s.product) extra += `<div class="chip-product">📦 ${s.product}</div>`;
-          // CTA 버튼 (IG / TT 업로드)
-          if(s.igUrl) extra += `<a class="chip-ref" href="${s.igUrl}" target="_blank" onclick="event.stopPropagation()" style="color:#fff;background:#c8306a;border-radius:4px;padding:2px 6px;font-size:9px;font-weight:600;text-decoration:none">📸 IG</a>`;
-          if(s.ttUrl) extra += `<a class="chip-ref" href="${s.ttUrl}" target="_blank" onclick="event.stopPropagation()" style="color:#fff;background:#111;border-radius:4px;padding:2px 6px;font-size:9px;font-weight:600;text-decoration:none">🎵 TT</a>`;
-          // 인터렉션 수치
           const ig=s.igStats||{}, tt=s.ttStats||{};
           const hasIg=ig.like||ig.comment||ig.share||ig.save||ig.repost;
           const hasTt=tt.like||tt.comment||tt.save;
-          if(hasIg) extra += `<div style="margin-top:3px;font-size:8px;color:#c8306a;line-height:1.6">❤️${ig.like||0} 💬${ig.comment||0} ↗${ig.share||0} 🔖${ig.save||0} 🔁${ig.repost||0}</div>`;
-          if(hasTt) extra += `<div style="font-size:8px;color:#555;line-height:1.6">❤️${tt.like||0} 💬${tt.comment||0} 🔖${tt.save||0}</div>`;
-          if(s.uploadUrl) extra += `<a class="chip-ref" href="${s.uploadUrl}" target="_blank" onclick="event.stopPropagation()" style="color:#0a7050;font-weight:500">📤 업로드 링크</a>`;
+          let extra = '';
+          // 내용 줄바꿈 허용
+          if(s.content) extra += `<div class="chip-content" style="white-space:normal;line-height:1.5">${s.content}</div>`;
+          // 제품 줄바꿈 허용 (여러 제품)
+          if(s.product) extra += `<div class="chip-product" style="white-space:normal;line-height:1.5;font-size:9px;color:var(--tx);font-weight:500;margin-top:2px">📦 ${s.product}</div>`;
+          // CTA 링크 버튼
+          if(s.igUrl||s.ttUrl) {
+            extra += `<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:3px">`;
+            if(s.igUrl) extra += `<a href="${s.igUrl}" target="_blank" onclick="event.stopPropagation()" style="color:#fff;background:#c8306a;border-radius:4px;padding:2px 6px;font-size:8.5px;font-weight:600;text-decoration:none">📸 IG</a>`;
+            if(s.ttUrl) extra += `<a href="${s.ttUrl}" target="_blank" onclick="event.stopPropagation()" style="color:#fff;background:#111;border-radius:4px;padding:2px 6px;font-size:8.5px;font-weight:600;text-decoration:none">🎵 TT</a>`;
+            extra += `</div>`;
+          }
+          // 인터렉션 수치
+          if(hasIg) extra += `<div style="margin-top:3px;padding:2px 4px;background:rgba(200,48,106,.08);border-radius:3px;font-size:7.5px;color:#c8306a;line-height:1.8">❤️${ig.like||0} 💬${ig.comment||0} ↗${ig.share||0} 🔖${ig.save||0} 🔁${ig.repost||0}</div>`;
+          if(hasTt) extra += `<div style="margin-top:2px;padding:2px 4px;background:rgba(0,0,0,.05);border-radius:3px;font-size:7.5px;color:#333;line-height:1.8">❤️${tt.like||0} 💬${tt.comment||0} 🔖${tt.save||0}</div>`;
           inner += `<div class="chip" data-sid="${s._id}" style="${chipStyle}" oncontextmenu="showCtx(event,'${s._id}')">${disp}${extra}</div>`;
         }
       });
@@ -972,7 +977,6 @@ function openSlotEdit(id) {
   document.getElementById('s-ref').value=s.ref||'';
   document.getElementById('s-ref-ig').value=s.igUrl||'';
   document.getElementById('s-ref-tt').value=s.ttUrl||'';
-  document.getElementById('s-upload-url').value=s.uploadUrl||'';
   document.getElementById('s-content').value=s.content||'';
   document.getElementById('s-product').value=s.product||'';
   if(s.thumb) applySlotThumb(s.thumb); else clearSlotThumb();
