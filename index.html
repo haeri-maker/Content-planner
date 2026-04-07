@@ -117,8 +117,8 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
 .chip{border-radius:4px;padding:2px 5px;margin-bottom:2px;font-size:9px;font-weight:500;display:block;line-height:1.35;cursor:pointer;transition:filter .1s}
 .chip:hover{filter:brightness(.92)}
 .chip-content{font-size:8px;color:var(--tx2);margin-top:1px;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}
-.chip-product{font-size:7.5px;color:var(--tx3);margin-top:1px}
-.chip-ref{font-size:7.5px;display:block;margin-top:1px;text-decoration:none}
+.chip-product{font-size:9.5px;color:var(--tx);margin-top:2px;white-space:normal;line-height:1.4;font-weight:500}
+.chip-ref{font-size:9px;display:inline-flex;align-items:center;margin-top:2px;margin-right:3px;text-decoration:none;padding:2px 6px;border-radius:3px;background:rgba(0,0,0,.06);font-weight:500}
 .wbar{font-size:8.5px;font-weight:600;text-transform:uppercase;padding:1px 4px;border-radius:3px;display:inline-block;margin-bottom:2px;letter-spacing:.04em}
 .wb-plan{background:var(--plan-bg);color:var(--plan-c);border:0.5px solid var(--plan-bd)}
 .wb-recruit{background:var(--rec-bg);color:var(--rec-c);border:0.5px solid var(--rec-bd)}
@@ -226,6 +226,7 @@ td.tdn{color:var(--tx)}
     <button class="nav on" data-p="calendar"><div class="ndot" style="background:var(--leps)"></div>캘린더</button>
     <button class="nav" data-p="creators"><div class="ndot" style="background:var(--cr-c)"></div>크리에이터</button>
     <button class="nav" data-p="budget"><div class="ndot" style="background:var(--plan-c)"></div>예산</button>
+    <button class="nav" data-p="report"><div class="ndot" style="background:var(--leps)"></div>주간 공유 리포트</button>
   </div>
   <div class="sb-budget">
     <div id="sb-brand-rows"></div>
@@ -290,6 +291,24 @@ td.tdn{color:var(--tx)}
   </div>
 </div>
 
+
+<!-- REPORT -->
+<div class="panel" id="panel-report">
+  <div class="ph">
+    <div><div class="pt">주간 공유 리포트</div><div class="ps" id="report-date-range">이번 주 vs 지난 주</div></div>
+    <div class="row">
+      <button class="btn btn-g" id="btn-report-prev">‹ 이전</button>
+      <button class="btn btn-g" id="btn-report-next">다음 ›</button>
+      <button class="btn btn-p" id="btn-save-report">💾 저장</button>
+    </div>
+  </div>
+  <div id="report-body"></div>
+  <div style="margin-top:24px">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--tx2)">📁 아카이브</div>
+    <div id="report-archive"></div>
+  </div>
+</div>
+
 </main>
 </div>
 
@@ -315,22 +334,11 @@ td.tdn{color:var(--tx)}
       <div class="fg fg2">
         <div class="field"><label>날짜</label><input type="date" id="s-date"></div>
         <div class="field"><label>기본 유형</label>
-          <select id="s-type">
-            <option value="ugc">UGC</option>
-            <option value="meme">텍스트 밈</option>
-            <option value="creator">크리에이터 릴스</option>
-            <option value="plan">기획 주간</option>
-            <option value="recruit">섭외 주간</option>
-            <option value="shoot">촬영일</option>
-          </select>
+          <select id="s-type"></select>
         </div>
       </div>
-      <div class="fg fg1"><div class="field"><label>제목</label><input type="text" id="s-title-val" placeholder="슬롯 제목"></div></div>
       <div class="fg fg1"><div class="field"><label>🔗 레퍼런스 링크</label><input type="url" id="s-ref" placeholder="https://..."></div></div>
-      <div class="fg fg2">
-        <div class="field"><label>유형 커스텀 (직접 입력)</label><input type="text" id="s-type-custom" placeholder="예: GRWM, 밈, 클로즈업"></div>
-        <div class="field"><label>업로드 시간</label><input type="time" id="s-time" value="10:00"></div>
-      </div>
+      <div class="fg fg1"><div class="field"><label>업로드 시간</label><input type="time" id="s-time" value="10:00"></div></div>
       <div class="fg fg1"><div class="field"><label>내용 (캘린더에 표시)</label><input type="text" id="s-content" placeholder="예: 아침 루틴, 세럼 언박싱"></div></div>
       <div class="fg fg2">
         <div class="field"><label>제품</label><input type="text" id="s-product" placeholder="예: PDRN 토너"></div>
@@ -339,7 +347,22 @@ td.tdn{color:var(--tx)}
         <div class="field"><label>📸 IG 업로드 링크</label><input type="url" id="s-ref-ig" placeholder="https://instagram.com/p/..."></div>
         <div class="field"><label>🎵 TT 업로드 링크</label><input type="url" id="s-ref-tt" placeholder="https://tiktok.com/@.../video/..."></div>
       </div>
-      <div class="fg fg1"><div class="field"><label>📤 업로드 링크 (업로드 후 추가)</label><input type="url" id="s-upload-url" placeholder="https://www.instagram.com/p/..."></div></div>
+      <div style="margin-bottom:10px;border:1px solid var(--bd);border-radius:var(--r);overflow:hidden">
+        <div style="padding:8px 12px;background:var(--bg3);border-bottom:1px solid var(--bd);font-size:10.5px;font-weight:600;color:#c8306a">📸 Instagram 인터렉션</div>
+        <div style="padding:10px 12px;display:grid;grid-template-columns:repeat(5,1fr);gap:7px">
+          <div class="field"><label>좋아요</label><input type="number" id="ig-like" min="0" placeholder="0"></div>
+          <div class="field"><label>댓글</label><input type="number" id="ig-comment" min="0" placeholder="0"></div>
+          <div class="field"><label>공유</label><input type="number" id="ig-share" min="0" placeholder="0"></div>
+          <div class="field"><label>저장</label><input type="number" id="ig-save" min="0" placeholder="0"></div>
+          <div class="field"><label>리포스트</label><input type="number" id="ig-repost" min="0" placeholder="0"></div>
+        </div>
+        <div style="padding:8px 12px;background:var(--bg3);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);font-size:10.5px;font-weight:600;color:#111">🎵 TikTok 인터렉션</div>
+        <div style="padding:10px 12px;display:grid;grid-template-columns:repeat(3,1fr);gap:7px">
+          <div class="field"><label>좋아요</label><input type="number" id="tt-like" min="0" placeholder="0"></div>
+          <div class="field"><label>댓글</label><input type="number" id="tt-comment" min="0" placeholder="0"></div>
+          <div class="field"><label>저장</label><input type="number" id="tt-save" min="0" placeholder="0"></div>
+        </div>
+      </div>
       <div style="margin-bottom:8px">
         <div style="font-size:10.5px;color:var(--tx2);font-weight:500;margin-bottom:5px">썸네일</div>
         <div class="pz" id="slot-pz" tabindex="0">
@@ -495,14 +518,15 @@ const db = supabase.createClient(SB_URL, SB_KEY);
 /* ══ CONVERTERS ══ */
 function s2db(s, brand) {
   return { id: s._id, brand, date: s.date, type: s.type, type_custom: s.typeCustom||'',
-    title: s.title, time: s.time, ref: s.ref||'', ig_url: s.igUrl||'', tt_url: s.ttUrl||'', thumb: s.thumb,
+    title: s.title, time: s.time, ref: s.ref||'', ig_url: s.igUrl||'', tt_url: s.ttUrl||'', ig_stats: JSON.stringify(s.igStats||{}), tt_stats: JSON.stringify(s.ttStats||{}), thumb: s.thumb,
     shoot_location: s.shootLocation, shoot_director: s.shootDirector,
     shoot_creators: s.shootCreators, memo: s.memo,
     content: s.content||'', product: s.product||'', upload_url: s.uploadUrl||'' };
 }
+function safeJSON(v){try{return v?JSON.parse(v):{};}catch{return{};}} 
 function db2s(r) {
   return { _id: r.id, date: r.date||'', type: r.type||'ugc', typeCustom: r.type_custom||'',
-    title: r.title||'', time: r.time||'', ref: r.ref||'', igUrl: r.ig_url||'', ttUrl: r.tt_url||'', thumb: r.thumb||'',
+    title: r.title||'', time: r.time||'', ref: r.ref||'', igUrl: r.ig_url||'', ttUrl: r.tt_url||'', igStats: safeJSON(r.ig_stats), ttStats: safeJSON(r.tt_stats), thumb: r.thumb||'',
     shootLocation: r.shoot_location||'', shootDirector: r.shoot_director||'',
     shootCreators: r.shoot_creators||[], memo: r.memo||'',
     content: r.content||'', product: r.product||'', uploadUrl: r.upload_url||'' };
@@ -590,12 +614,34 @@ let LEGS = JSON.parse(localStorage.getItem('cp-legs')||'null') || [
   { id:'creator', name:'크리에이터',color:'#c44d10' },
 ];
 function saveLegs() { localStorage.setItem('cp-legs', JSON.stringify(LEGS)); }
+function fillTypeSelect() {
+  const sel = document.getElementById('s-type');
+  if (!sel) return;
+  const cur = sel.value;
+  // 기본 고정 옵션
+  const fixed = [
+    {value:'ugc', label:'UGC'},
+    {value:'meme', label:'텍스트 밈'},
+    {value:'creator', label:'크리에이터 릴스'},
+    {value:'plan', label:'기획 주간'},
+    {value:'recruit', label:'섭외 주간'},
+    {value:'shoot', label:'촬영일'},
+  ];
+  // 범례에서 커스텀 항목 추가 (고정값 id랑 안 겹치는 것만)
+  const fixedIds = fixed.map(f=>f.value);
+  const customLegs = LEGS.filter(l => !fixedIds.includes(l.id));
+  const allOpts = [...fixed, ...customLegs.map(l=>({value:l.id, label:l.name}))];
+  sel.innerHTML = allOpts.map(o =>
+    `<option value="${o.value}" ${o.value===cur?'selected':''}>${o.label}</option>`
+  ).join('');
+}
 function renderLeg() {
   document.getElementById('legend-items').innerHTML = LEGS.map((l,i) =>
     `<div class="leg"><div class="ldot" style="background:${l.color}"></div><span>${l.name}</span>
      <button class="leg-x" onclick="delLeg(${i})">×</button></div>`
   ).join('');
   renderLegEdit();
+  fillTypeSelect();
 }
 function renderLegEdit() {
   const el = document.getElementById('leg-edit-list');
@@ -663,6 +709,7 @@ function renderActive() {
   if (id==='calendar') renderCal();
   else if (id==='creators') renderCreators();
   else if (id==='budget') renderBudget();
+  else if (id==='report') renderReport();
 }
 
 /* ══ MODALS ══ */
@@ -778,9 +825,15 @@ function renderCal() {
           let extra = '';
           if(s.content) extra += `<div class="chip-content">${s.content}</div>`;
           if(s.product) extra += `<div class="chip-product">📦 ${s.product}</div>`;
-          if(s.ref)     extra += `<a class="chip-ref" href="${s.ref}" target="_blank" onclick="event.stopPropagation()" style="color:var(--a)">🔗 레퍼런스</a>`;
-          if(s.igUrl)   extra += `<a class="chip-ref" href="${s.igUrl}" target="_blank" onclick="event.stopPropagation()" style="color:#c8306a">📸 IG</a>`;
-          if(s.ttUrl)   extra += `<a class="chip-ref" href="${s.ttUrl}" target="_blank" onclick="event.stopPropagation()" style="color:#111">🎵 TT</a>`;
+          // CTA 버튼 (IG / TT 업로드)
+          if(s.igUrl) extra += `<a class="chip-ref" href="${s.igUrl}" target="_blank" onclick="event.stopPropagation()" style="color:#fff;background:#c8306a;border-radius:4px;padding:2px 6px;font-size:9px;font-weight:600;text-decoration:none">📸 IG</a>`;
+          if(s.ttUrl) extra += `<a class="chip-ref" href="${s.ttUrl}" target="_blank" onclick="event.stopPropagation()" style="color:#fff;background:#111;border-radius:4px;padding:2px 6px;font-size:9px;font-weight:600;text-decoration:none">🎵 TT</a>`;
+          // 인터렉션 수치
+          const ig=s.igStats||{}, tt=s.ttStats||{};
+          const hasIg=ig.like||ig.comment||ig.share||ig.save||ig.repost;
+          const hasTt=tt.like||tt.comment||tt.save;
+          if(hasIg) extra += `<div style="margin-top:3px;font-size:8px;color:#c8306a;line-height:1.6">❤️${ig.like||0} 💬${ig.comment||0} ↗${ig.share||0} 🔖${ig.save||0} 🔁${ig.repost||0}</div>`;
+          if(hasTt) extra += `<div style="font-size:8px;color:#555;line-height:1.6">❤️${tt.like||0} 💬${tt.comment||0} 🔖${tt.save||0}</div>`;
           if(s.uploadUrl) extra += `<a class="chip-ref" href="${s.uploadUrl}" target="_blank" onclick="event.stopPropagation()" style="color:#0a7050;font-weight:500">📤 업로드 링크</a>`;
           inner += `<div class="chip" data-sid="${s._id}" style="${chipStyle}" oncontextmenu="showCtx(event,'${s._id}')">${disp}${extra}</div>`;
         }
@@ -851,10 +904,17 @@ function openDayPop(date) {
         ${s.content?`<div class="sp-row"><div class="sp-lbl">내용</div><div class="sp-val">${s.content}</div></div>`:''}
         ${s.product?`<div class="sp-row"><div class="sp-lbl">제품</div><div class="sp-val">${s.product}</div></div>`:''}
         ${s.time?`<div class="sp-row"><div class="sp-lbl">업로드</div><div class="sp-val">${s.time} KST · NY ${calcNY(s.time)}</div></div>`:''}
-        ${s.ref?`<div class="sp-row"><div class="sp-lbl">레퍼런스</div><div class="sp-val"><a href="${s.ref}" target="_blank" style="color:var(--a)">🔗 링크 ↗</a></div></div>`:''}
-        ${s.igUrl||s.ttUrl?`<div class="sp-row"><div class="sp-lbl">업로드</div><div class="sp-val" style="display:flex;gap:10px;flex-wrap:wrap">
-          ${s.igUrl?`<a href="${s.igUrl}" target="_blank" style="color:#c8306a;font-weight:500">📸 Instagram ↗</a>`:''}
-          ${s.ttUrl?`<a href="${s.ttUrl}" target="_blank" style="color:#111;font-weight:500">🎵 TikTok ↗</a>`:''}</div></div>`:''}
+        ${s.ref?`<div class="sp-row"><div class="sp-lbl">레퍼런스</div><div class="sp-val"><a href="${s.ref}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;background:var(--a-bg);color:var(--a);border:1px solid var(--a-bd);border-radius:20px;font-weight:600;font-size:11px;text-decoration:none">🔗 레퍼런스 링크 ↗</a></div></div>`:''}
+        ${s.igUrl||s.ttUrl?`<div class="sp-row"><div class="sp-lbl">업로드</div><div class="sp-val" style="display:flex;gap:7px;flex-wrap:wrap">
+          ${s.igUrl?`<a href="${s.igUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:5px 14px;background:#c8306a;color:#fff;border-radius:20px;font-weight:600;font-size:11px;text-decoration:none">📸 Instagram ↗</a>`:''}
+          ${s.ttUrl?`<a href="${s.ttUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:5px 14px;background:#111;color:#fff;border-radius:20px;font-weight:600;font-size:11px;text-decoration:none">🎵 TikTok ↗</a>`:''}</div></div>`:''}
+        ${(()=>{const ig=s.igStats||{},tt=s.ttStats||{},hasIg=ig.like||ig.comment||ig.share||ig.save||ig.repost,hasTt=tt.like||tt.comment||tt.save;
+          if(!hasIg&&!hasTt)return'';
+          return `<div class="sp-row"><div class="sp-lbl">인터렉션</div><div class="sp-val">`
+            +(hasIg?`<div style="margin-bottom:5px"><span style="font-size:9.5px;font-weight:600;color:#c8306a;margin-bottom:3px;display:block">📸 Instagram</span><div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;font-family:'DM Mono',monospace">❤️ ${ig.like||0} &nbsp;💬 ${ig.comment||0} &nbsp;↗ ${ig.share||0} &nbsp;🔖 ${ig.save||0} &nbsp;🔁 ${ig.repost||0}</div></div>`:'')
+            +(hasTt?`<div><span style="font-size:9.5px;font-weight:600;color:#555;margin-bottom:3px;display:block">🎵 TikTok</span><div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;font-family:'DM Mono',monospace">❤️ ${tt.like||0} &nbsp;💬 ${tt.comment||0} &nbsp;🔖 ${tt.save||0}</div></div>`:'')
+            +`</div></div>`;
+        })()}
         ${s.uploadUrl?`<div class="sp-row"><div class="sp-lbl">업로드 링크</div><div class="sp-val"><a href="${s.uploadUrl}" target="_blank" style="color:#0a7050;font-weight:500">${s.uploadUrl.length>50?s.uploadUrl.slice(0,50)+'…':s.uploadUrl} ↗</a></div></div>`:''}`;
     }
     h += `<div class="slot-pop">
@@ -892,11 +952,13 @@ document.getElementById('day-add-btn').addEventListener('click', () => { closeOv
 document.getElementById('btn-add-slot').addEventListener('click', () => openSlotAdd(null));
 function openSlotAdd(date) {
   S.editSlotId=null; clearSlotThumb();
+  fillTypeSelect();
   document.getElementById('slot-title').textContent='슬롯 추가';
-  ['s-title-val','s-ref','s-ref-ig','s-ref-tt','s-content','s-product','s-type-custom'].forEach(id=>document.getElementById(id).value='');
+  ['s-ref','s-ref-ig','s-ref-tt','s-content','s-product'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('s-date').value=date||'';
   document.getElementById('s-type').value='ugc';
   document.getElementById('s-time').value='10:00';
+  ['ig-like','ig-comment','ig-share','ig-save','ig-repost','tt-like','tt-comment','tt-save'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   openOv('ov-slot');
 }
 function openSlotEdit(id) {
@@ -906,8 +968,6 @@ function openSlotEdit(id) {
   document.getElementById('slot-title').textContent='슬롯 편집';
   document.getElementById('s-date').value=s.date;
   document.getElementById('s-type').value=s.type;
-  document.getElementById('s-type-custom').value=s.typeCustom||'';
-  document.getElementById('s-title-val').value=s.title;
   document.getElementById('s-time').value=s.time||'10:00';
   document.getElementById('s-ref').value=s.ref||'';
   document.getElementById('s-ref-ig').value=s.igUrl||'';
@@ -916,22 +976,37 @@ function openSlotEdit(id) {
   document.getElementById('s-content').value=s.content||'';
   document.getElementById('s-product').value=s.product||'';
   if(s.thumb) applySlotThumb(s.thumb); else clearSlotThumb();
+  const ig=s.igStats||{}, tt=s.ttStats||{};
+  ['like','comment','share','save','repost'].forEach(k=>{const el=document.getElementById('ig-'+k);if(el)el.value=ig[k]||'';});
+  ['like','comment','save'].forEach(k=>{const el=document.getElementById('tt-'+k);if(el)el.value=tt[k]||'';});
   closeOv('ov-day'); openOv('ov-slot');
 }
 document.getElementById('save-slot-btn').addEventListener('click', () => {
+  const _content = document.getElementById('s-content').value;
   const d = {
     date: document.getElementById('s-date').value,
     type: document.getElementById('s-type').value,
-    typeCustom: document.getElementById('s-type-custom').value,
-    title: document.getElementById('s-title-val').value,
+    typeCustom: '',
+    title: _content,
     time: document.getElementById('s-time').value,
     ref: document.getElementById('s-ref').value,
     igUrl: document.getElementById('s-ref-ig').value,
     ttUrl: document.getElementById('s-ref-tt').value,
-    content: document.getElementById('s-content').value,
+    content: _content,
     product: document.getElementById('s-product').value,
     thumb: S.slotThumb||'',
-    uploadUrl: document.getElementById('s-upload-url').value,
+    igStats: {
+      like:    parseInt(document.getElementById('ig-like')?.value)||0,
+      comment: parseInt(document.getElementById('ig-comment')?.value)||0,
+      share:   parseInt(document.getElementById('ig-share')?.value)||0,
+      save:    parseInt(document.getElementById('ig-save')?.value)||0,
+      repost:  parseInt(document.getElementById('ig-repost')?.value)||0,
+    },
+    ttStats: {
+      like:    parseInt(document.getElementById('tt-like')?.value)||0,
+      comment: parseInt(document.getElementById('tt-comment')?.value)||0,
+      save:    parseInt(document.getElementById('tt-save')?.value)||0,
+    },
   };
   if(!d.date) return;
   let obj;
@@ -1161,6 +1236,227 @@ function updateSB() {
   switchBrand('labo');
   setupRT();
 })();
+
+/* ══ REPORT ══ */
+const REPORT_METRICS = ['조회수','도달수','프로필 방문','외부링크 클릭','인터렉션','팔로우 증가','팔로우 감소'];
+let reportOffset = 0; // 0=이번주, -1=지난주 기준, etc.
+
+function getWeekRange(offset) {
+  // offset 0 = 이번주(월~일), -1 = 지난주, -2 = 전전주
+  const now = new Date();
+  const day = (now.getDay()+6)%7; // 월=0
+  const thisMonday = new Date(now); thisMonday.setDate(now.getDate()-day); thisMonday.setHours(0,0,0,0);
+  const start = new Date(thisMonday); start.setDate(thisMonday.getDate() + offset*7);
+  const end = new Date(start); end.setDate(start.getDate()+6);
+  return { start, end };
+}
+function fmt(d) { return `${d.getMonth()+1}/${d.getDate()}`; }
+function fmtKey(d) { return d.toISOString().slice(0,10); }
+function weekDates(offset) {
+  const {start,end} = getWeekRange(offset);
+  const dates = [];
+  for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) dates.push(fmtKey(new Date(d)));
+  return dates;
+}
+function getReportKey(brand, offset) { return `report-${brand}-offset${offset}`; }
+function loadReportData(brand, offset) {
+  try { return JSON.parse(localStorage.getItem(getReportKey(brand,offset))||'{}'); } catch{ return {}; }
+}
+function saveReportData(brand, offset, data) {
+  localStorage.setItem(getReportKey(brand,offset), JSON.stringify(data));
+}
+
+function calcChange(cur, prev) {
+  if (!prev || prev===0) return null;
+  const pct = Math.round((cur-prev)/prev*100);
+  return pct;
+}
+
+// 리포트 썸네일: 각 주별로 커스텀 추가/제거 가능
+// 구조: reportThumbs[brand][offset] = [{src, label}, ...]
+function getThumbKey(brand, offset) { return `rthumb-${brand}-${offset}`; }
+function loadThumbs(brand, offset) {
+  try { return JSON.parse(localStorage.getItem(getThumbKey(brand,offset))||'null') || null; } catch{ return null; }
+}
+function saveThumbs(brand, offset, arr) {
+  localStorage.setItem(getThumbKey(brand,offset), JSON.stringify(arr));
+}
+function getThumbsForWeek(brand, offset) {
+  // 저장된 게 있으면 우선, 없으면 캘린더에서 자동
+  const saved = loadThumbs(brand, offset);
+  if (saved !== null) return saved;
+  const dates = weekDates(offset);
+  return D[brand].slots
+    .filter(s => dates.includes(s.date) && s.thumb && !['plan','recruit'].includes(s.type))
+    .map(s => ({ src: s.thumb, label: s.content || '' }));
+}
+
+function renderThumbBox(brand, offset, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const dates = weekDates(offset);
+  const slots = D[brand].slots.filter(s => dates.includes(s.date) && s.thumb && !['plan','recruit'].includes(s.type));
+  if (!slots.length) {
+    container.innerHTML = '<div style="color:var(--tx3);font-size:11px;padding:14px">해당 주 썸네일 없음</div>';
+    return;
+  }
+  container.innerHTML = slots.map(s => {
+    const ig = s.igStats||{}, tt = s.ttStats||{};
+    const hasIg = ig.like||ig.comment||ig.share||ig.save||ig.repost;
+    const hasTt = tt.like||tt.comment||tt.save;
+    const igRow = hasIg ? `<div style="margin-top:4px;padding:4px 5px;background:#faedf3;border-radius:4px;font-size:8px;color:#c8306a;line-height:1.7">
+        <div style="font-weight:600;margin-bottom:1px">📸 IG</div>
+        <div>❤️ ${ig.like||0} &nbsp;💬 ${ig.comment||0} &nbsp;↗ ${ig.share||0}</div>
+        <div>🔖 ${ig.save||0} &nbsp;🔁 ${ig.repost||0}</div>
+      </div>` : '';
+    const ttRow = hasTt ? `<div style="margin-top:3px;padding:4px 5px;background:#f3f3f3;border-radius:4px;font-size:8px;color:#333;line-height:1.7">
+        <div style="font-weight:600;margin-bottom:1px">🎵 TT</div>
+        <div>❤️ ${tt.like||0} &nbsp;💬 ${tt.comment||0} &nbsp;🔖 ${tt.save||0}</div>
+      </div>` : '';
+    return `<div style="min-width:100px;max-width:125px;flex-shrink:0">
+      <img src="${s.thumb}" style="width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:6px;border:1px solid var(--bd);display:block">
+      <div style="font-size:8.5px;color:var(--tx2);margin-top:3px;line-height:1.3;font-weight:500">${s.content||s.title||''}</div>
+      ${s.product?`<div style="font-size:7.5px;color:var(--tx3)">📦 ${s.product}</div>`:''}
+      ${igRow}${ttRow}
+    </div>`;
+  }).join('');
+}
+
+function renderReport() {
+  const brand = S.brand;
+  const curW = getWeekRange(reportOffset);
+  const prevW = getWeekRange(reportOffset-1);
+
+  document.getElementById('report-date-range').textContent =
+    `${fmt(prevW.start)} - ${fmt(prevW.end)} vs ${fmt(curW.start)} - ${fmt(curW.end)}`;
+
+  const curData  = loadReportData(brand, reportOffset);
+  const prevData = loadReportData(brand, reportOffset-1);
+
+  const metricRows = REPORT_METRICS.map(m => {
+    const curVal = curData[m]||'';
+    const prevVal = prevData[m]||'';
+    const change = (curVal!==''&&prevVal!=='') ? calcChange(Number(curVal),Number(prevVal)) : null;
+    const chStyle = change===null ? 'color:var(--tx3)' : change>0 ? 'color:#c8306a;font-weight:600' : change<0 ? 'color:#1a5a90;font-weight:600' : 'color:var(--tx2)';
+    const chTxt = change===null ? '—' : (change>0?'▲':'▼')+Math.abs(change)+'%';
+    return `<tr>
+      <td style="font-weight:500;color:var(--tx);font-size:12px">${m}</td>
+      <td><input type="number" class="rep-input" data-metric="${m}" data-week="prev" value="${prevVal}" placeholder="—"
+        style="width:90px;text-align:right;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:12px;color:var(--tx);outline:none"></td>
+      <td style="${chStyle};text-align:center;font-family:'DM Mono',monospace;font-size:12px">${chTxt}</td>
+      <td><input type="number" class="rep-input" data-metric="${m}" data-week="cur" value="${curVal}" placeholder="—"
+        style="width:90px;text-align:right;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:4px 7px;font-family:'DM Mono',monospace;font-size:12px;color:var(--tx);outline:none"></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('report-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+      <div class="card">
+        <div class="card-h">지난 주 ${fmt(prevW.start)} – ${fmt(prevW.end)}</div>
+        <div id="thumbbox-${reportOffset-1}" style="padding:10px;display:flex;gap:8px;flex-wrap:wrap;min-height:90px;align-items:flex-start"></div>
+      </div>
+      <div class="card">
+        <div class="card-h">이번 주 ${fmt(curW.start)} – ${fmt(curW.end)}</div>
+        <div id="thumbbox-${reportOffset}" style="padding:10px;display:flex;gap:8px;flex-wrap:wrap;min-height:90px;align-items:flex-start"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h">📊 지표 비교</div>
+      <div class="tbl-wrap" style="padding:4px 0">
+        <table>
+          <thead><tr>
+            <th>지표</th>
+            <th style="text-align:right">${fmt(prevW.start)}–${fmt(prevW.end)}</th>
+            <th style="text-align:center">증감률</th>
+            <th style="text-align:right">${fmt(curW.start)}–${fmt(curW.end)}</th>
+          </tr></thead>
+          <tbody>${metricRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+  // 썸네일 박스 렌더
+  renderThumbBox(brand, reportOffset-1, `thumbbox-${reportOffset-1}`);
+  renderThumbBox(brand, reportOffset,   `thumbbox-${reportOffset}`);
+
+  // 지표 입력 이벤트
+  document.querySelectorAll('.rep-input').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const metric = inp.dataset.metric, week = inp.dataset.week;
+      const offset = week==='cur' ? reportOffset : reportOffset-1;
+      const data = loadReportData(brand, offset);
+      data[metric] = inp.value;
+      saveReportData(brand, offset, data);
+      // 증감률만 다시 계산 (전체 re-render 없이)
+      renderMetricChange();
+    });
+  });
+
+  renderReportArchive(brand);
+}
+
+function renderMetricChange() {
+  const brand = S.brand;
+  const curData  = loadReportData(brand, reportOffset);
+  const prevData = loadReportData(brand, reportOffset-1);
+  document.querySelectorAll('.rep-input').forEach(inp => {
+    const m = inp.dataset.metric, week = inp.dataset.week;
+    const curVal = curData[m]||'', prevVal = prevData[m]||'';
+    if (week !== 'cur') return;
+    const change = (curVal!==''&&prevVal!=='') ? calcChange(Number(curVal),Number(prevVal)) : null;
+    // 같은 행의 증감률 td 찾기
+    const tr = inp.closest('tr');
+    if (!tr) return;
+    const tds = tr.querySelectorAll('td');
+    if (tds[2]) {
+      const chStyle = change===null?'color:var(--tx3)':change>0?'color:#c8306a;font-weight:600':change<0?'color:#1a5a90;font-weight:600':'color:var(--tx2)';
+      const chTxt = change===null?'—':(change>0?'▲':'▼')+Math.abs(change)+'%';
+      tds[2].style.cssText = chStyle+';text-align:center;font-family:DM Mono,monospace;font-size:12px';
+      tds[2].textContent = chTxt;
+    }
+  });
+}
+
+function renderReportArchive(brand) {
+  const keys = [];
+  for(let k in localStorage) {
+    if (k.startsWith(`report-${brand}-offset`) && k !== getReportKey(brand,reportOffset) && k !== getReportKey(brand,reportOffset-1)) {
+      const offset = parseInt(k.replace(`report-${brand}-offset`,''));
+      if (!isNaN(offset)) keys.push(offset);
+    }
+  }
+  keys.sort((a,b)=>b-a);
+  if (!keys.length) { document.getElementById('report-archive').innerHTML='<div style="color:var(--tx3);font-size:11px;padding:8px 0">저장된 리포트 없음</div>'; return; }
+  document.getElementById('report-archive').innerHTML = keys.map(offset => {
+    const {start,end} = getWeekRange(offset);
+    const prevW = getWeekRange(offset-1);
+    const data = loadReportData(brand, offset);
+    const prevData = loadReportData(brand, offset-1);
+    const rows = REPORT_METRICS.filter(m=>data[m]||prevData[m]).map(m=>{
+      const cur=Number(data[m]||0), prev=Number(prevData[m]||0);
+      const ch = prev ? Math.round((cur-prev)/prev*100) : null;
+      const chTxt = ch===null?'—':(ch>0?'▲':'▼')+Math.abs(ch)+'%';
+      const chC = ch===null?'#999':ch>0?'#c8306a':'#1a5a90';
+      return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--bd);font-size:11px">
+        <span style="color:var(--tx2)">${m}</span>
+        <span style="font-family:'DM Mono',monospace;color:var(--tx)">${prev||'—'} → ${data[m]||'—'}</span>
+        <span style="font-family:'DM Mono',monospace;color:${chC}">${chTxt}</span></div>`;
+    }).join('');
+    return `<div class="card" style="margin-bottom:9px">
+      <div class="card-h" style="font-size:11px">${fmt(prevW.start)}-${fmt(prevW.end)} vs ${fmt(start)}-${fmt(end)}</div>
+      <div style="padding:8px 12px">${rows||'<div style="color:var(--tx3);font-size:11px">데이터 없음</div>'}</div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('btn-report-prev').addEventListener('click', ()=>{ reportOffset--; renderReport(); });
+document.getElementById('btn-report-next').addEventListener('click', ()=>{ if(reportOffset<0){reportOffset++;renderReport();} });
+document.getElementById('btn-save-report').addEventListener('click', ()=>{
+  // 현재 보고 있는 offset 아카이브 저장 (현재 데이터는 이미 localStorage에 있음)
+  alert('저장되었어요! 아래 아카이브에서 확인하세요 ✅');
+  renderReportArchive(S.brand);
+});
+
 </script>
 </body>
 </html>
