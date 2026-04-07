@@ -852,8 +852,8 @@ function renderCal() {
             extra += `</div>`;
           }
           // 인터렉션 수치
-          if(hasIg) extra += `<div style="margin-top:3px;padding:2px 4px;background:rgba(200,48,106,.08);border-radius:3px;font-size:7.5px;color:#c8306a;line-height:1.8">❤️${ig.like||0} 💬${ig.comment||0} ↗${ig.share||0} 🔖${ig.save||0} 🔁${ig.repost||0}</div>`;
-          if(hasTt) extra += `<div style="margin-top:2px;padding:2px 4px;background:rgba(0,0,0,.05);border-radius:3px;font-size:7.5px;color:#333;line-height:1.8">❤️${tt.like||0} 💬${tt.comment||0} 🔖${tt.save||0}</div>`;
+          if(hasIg) extra += `<div style="margin-top:3px;padding:3px 5px;background:rgba(200,48,106,.08);border-radius:3px;font-size:9.5px;color:#c8306a;line-height:1.9">❤️${ig.like||0} 💬${ig.comment||0} ↗${ig.share||0} 🔖${ig.save||0} 🔁${ig.repost||0}</div>`;
+          if(hasTt) extra += `<div style="margin-top:2px;padding:3px 5px;background:rgba(0,0,0,.05);border-radius:3px;font-size:9.5px;color:#333;line-height:1.9">❤️${tt.like||0} 💬${tt.comment||0} 🔖${tt.save||0}</div>`;
           inner += `<div class="chip" data-sid="${s._id}" style="${chipStyle}" oncontextmenu="showCtx(event,'${s._id}')">${disp}${extra}</div>`;
         }
       });
@@ -1338,13 +1338,12 @@ function renderThumbBox(brand, offset, containerId) {
     const hasIg = ig.like||ig.comment||ig.share||ig.save||ig.repost;
     const hasTt = tt.like||tt.comment||tt.save;
     const igRow = hasIg ? `<div style="margin-top:6px;padding:6px 8px;background:#faedf3;border-radius:6px;color:#c8306a;line-height:1.9">
-        <div style="font-size:11px;font-weight:700;margin-bottom:2px">📸 Instagram</div>
-        <div style="font-size:11px">❤️ ${ig.like||0} &nbsp;💬 ${ig.comment||0} &nbsp;↗ ${ig.share||0}</div>
-        <div style="font-size:11px">🔖 ${ig.save||0} &nbsp;🔁 ${ig.repost||0}</div>
+        <div style="font-size:11px;font-weight:700;margin-bottom:3px">📸 Instagram</div>
+        <div style="font-size:11px;white-space:nowrap">❤️ ${ig.like||0} &nbsp;💬 ${ig.comment||0} &nbsp;↗ ${ig.share||0} &nbsp;🔖 ${ig.save||0} &nbsp;🔁 ${ig.repost||0}</div>
       </div>` : '';
     const ttRow = hasTt ? `<div style="margin-top:4px;padding:6px 8px;background:#f0f0f0;border-radius:6px;color:#333;line-height:1.9">
-        <div style="font-size:11px;font-weight:700;margin-bottom:2px">🎵 TikTok</div>
-        <div style="font-size:11px">❤️ ${tt.like||0} &nbsp;💬 ${tt.comment||0} &nbsp;🔖 ${tt.save||0}</div>
+        <div style="font-size:11px;font-weight:700;margin-bottom:3px">🎵 TikTok</div>
+        <div style="font-size:11px;white-space:nowrap">❤️ ${tt.like||0} &nbsp;💬 ${tt.comment||0} &nbsp;🔖 ${tt.save||0}</div>
       </div>` : '';
     const contentLines = (s.content||s.title||'').split(String.fromCharCode(10)).join('<br>'); const productLines = s.product ? s.product.split(String.fromCharCode(10)).join('<br>') : '';
     return `<div style="min-width:${minW}px;flex:1;max-width:${Math.max(minW+60, 240)}px">
