@@ -522,7 +522,7 @@ const db = supabase.createClient(SB_URL, SB_KEY);
 /* ══ CONVERTERS ══ */
 function s2db(s, brand) {
   return { id: s._id, brand, date: s.date, type: s.type, type_custom: s.typeCustom||'',
-    title: s.title, time: s.time, ref: s.ref||'', ig_url: s.igUrl||'', tt_url: s.ttUrl||'', views: s.views||0, ig_stats: JSON.stringify(s.igStats||{}), tt_stats: JSON.stringify(s.ttStats||{}), thumb: s.thumb,
+    title: s.title, time: s.time, ref: s.ref||'', ig_url: s.igUrl||'', tt_url: s.ttUrl||'', ig_stats: JSON.stringify(s.igStats||{}), tt_stats: JSON.stringify(s.ttStats||{}), thumb: s.thumb,
     shoot_location: s.shootLocation, shoot_director: s.shootDirector,
     shoot_creators: s.shootCreators, memo: s.memo,
     content: s.content||'', product: s.product||'', upload_url: s.uploadUrl||'' };
@@ -555,23 +555,30 @@ function db2e(r) {
 /* ══ DB OPS ══ */
 async function dbSave(table, row) {
   const { error } = await db.from(table).upsert(row, { onConflict: 'id' });
-  if (error) console.error('save', table, error);
+  if (error) {
+    console.error('save', table, error);
+    alert('❌ 저장 실패!\n' + error.message + '\n\nSupabase 연결을 확인해주세요.');
+    return false;
+  }
+  return true;
 }
 async function dbDel(table, id) {
   const { error } = await db.from(table).delete().eq('id', id);
   if (error) console.error('del', table, error);
 }
 async function loadDB() {
-  const [s, c, e] = await Promise.all([
+  const [s, cr, e] = await Promise.all([
     db.from('slots').select('*'),
     db.from('creators').select('*'),
     db.from('expenses').select('*'),
   ]);
+  if (s.error) { console.error('slots load error:', s.error); alert('❌ 데이터 로드 실패!\n' + s.error.message); return; }
   ['labo','leps','nuri'].forEach(b => {
     D[b].slots    = (s.data||[]).filter(r => r.brand===b).map(db2s);
-    D[b].creators = (c.data||[]).filter(r => r.brand===b).map(db2c);
+    D[b].creators = (cr.data||[]).filter(r => r.brand===b).map(db2c);
     D[b].expenses = (e.data||[]).filter(r => r.brand===b).map(db2e);
   });
+  console.log('✅ DB loaded:', s.data?.length, 'slots');
 }
 function setupRT() {
   db.channel('planner-slots')
