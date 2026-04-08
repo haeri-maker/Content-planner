@@ -339,6 +339,17 @@ td.tdn{color:var(--tx)}
         </div>
       </div>
       <div class="fg fg1"><div class="field"><label>🔗 레퍼런스 링크</label><input type="url" id="s-ref" placeholder="https://..."></div></div>
+      <div style="display:flex;gap:8px;margin-bottom:9px">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 12px;border-radius:20px;border:1.5px solid var(--bd2);font-size:11.5px;font-weight:500;color:var(--tx2);transition:all .12s;user-select:none" id="tog-plan">
+          <input type="checkbox" id="s-plan-done" style="display:none" onchange="updateTogStyle('plan')"> 📋 기획완료
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 12px;border-radius:20px;border:1.5px solid var(--bd2);font-size:11.5px;font-weight:500;color:var(--tx2);transition:all .12s;user-select:none" id="tog-shoot">
+          <input type="checkbox" id="s-shoot-done" style="display:none" onchange="updateTogStyle('shoot')"> 🎬 촬영완료
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 12px;border-radius:20px;border:1.5px solid var(--bd2);font-size:11.5px;font-weight:500;color:var(--tx2);transition:all .12s;user-select:none" id="tog-edit">
+          <input type="checkbox" id="s-edit-done" style="display:none" onchange="updateTogStyle('edit')"> ✂️ 편집완료
+        </label>
+      </div>
       <div class="fg fg1"><div class="field"><label>업로드 시간</label><input type="time" id="s-time" value="10:00"></div></div>
       <div class="fg fg1"><div class="field"><label>내용 (캘린더에 표시, Shift+Enter 줄바꿈)</label><textarea id="s-content" placeholder="예: 아침 루틴&#10;세럼 언박싱" style="min-height:52px;resize:vertical"></textarea></div></div>
       <div class="fg fg2">
@@ -522,7 +533,7 @@ const db = supabase.createClient(SB_URL, SB_KEY);
 /* ══ CONVERTERS ══ */
 function s2db(s, brand) {
   return { id: s._id, brand, date: s.date, type: s.type, type_custom: s.typeCustom||'',
-    title: s.title, time: s.time, ref: s.ref||'', ig_url: s.igUrl||'', tt_url: s.ttUrl||'', ig_stats: JSON.stringify(s.igStats||{}), tt_stats: JSON.stringify(s.ttStats||{}), thumb: s.thumb,
+    title: s.title, time: s.time, ref: s.ref||'', ig_url: s.igUrl||'', tt_url: s.ttUrl||'', ig_stats: JSON.stringify({...(s.igStats||{}), _sf:(s.statusFlags||{})}), tt_stats: JSON.stringify(s.ttStats||{}), thumb: s.thumb,
     shoot_location: s.shootLocation, shoot_director: s.shootDirector,
     shoot_creators: s.shootCreators, memo: s.memo,
     content: s.content||'', product: s.product||'', upload_url: s.uploadUrl||'' };
@@ -530,7 +541,7 @@ function s2db(s, brand) {
 function safeJSON(v){try{return v?JSON.parse(v):{};}catch{return{};}} 
 function db2s(r) {
   return { _id: r.id, date: r.date||'', type: r.type||'ugc', typeCustom: r.type_custom||'',
-    title: r.title||'', time: r.time||'', ref: r.ref||'', igUrl: r.ig_url||'', ttUrl: r.tt_url||'', igStats: safeJSON(r.ig_stats), ttStats: safeJSON(r.tt_stats), thumb: r.thumb||'',
+    title: r.title||'', time: r.time||'', ref: r.ref||'', igUrl: r.ig_url||'', ttUrl: r.tt_url||'', igStats: (()=>{const _d=safeJSON(r.ig_stats);delete _d._sf;return _d;})(), statusFlags: safeJSON(r.ig_stats)._sf||{}, ttStats: safeJSON(r.tt_stats), thumb: r.thumb||'',
     shootLocation: r.shoot_location||'', shootDirector: r.shoot_director||'',
     shootCreators: r.shoot_creators||[], memo: r.memo||'',
     content: r.content||'', product: r.product||'', uploadUrl: r.upload_url||'' };
@@ -625,12 +636,48 @@ let LEGS = JSON.parse(localStorage.getItem('cp-legs')||'null') || [
   { id:'creator', name:'크리에이터',color:'#c44d10' },
 ];
 function saveLegs() { localStorage.setItem('cp-legs', JSON.stringify(LEGS)); }
+function updateTogStyle(key) {
+  const ids = {plan:'s-plan-done', shoot:'s-shoot-done', edit:'s-edit-done'};
+  const togs = {plan:'tog-plan', shoot:'tog-shoot', edit:'tog-edit'};
+  const el = document.getElementById(ids[key]);
+  const tog = document.getElementById(togs[key]);
+  if (!el || !tog) return;
+  if (el.checked) {
+    tog.style.background = 'var(--a)';
+    tog.style.borderColor = 'var(--a)';
+    tog.style.color = '#fff';
+  } else {
+    tog.style.background = '';
+    tog.style.borderColor = 'var(--bd2)';
+    tog.style.color = 'var(--tx2)';
+  }
+}
+function getStatusFlags() {
+  return {
+    planDone:  document.getElementById('s-plan-done')?.checked  || false,
+    shootDone: document.getElementById('s-shoot-done')?.checked || false,
+    editDone:  document.getElementById('s-edit-done')?.checked  || false,
+  };
+}
+function setStatusFlags(s) {
+  ['plan','shoot','edit'].forEach(k => {
+    const el = document.getElementById('s-'+k+'-done');
+    if (el) { el.checked = s[k+'Done']||false; updateTogStyle(k); }
+  });
+}
+function clearStatusFlags() {
+  ['plan','shoot','edit'].forEach(k => {
+    const el = document.getElementById('s-'+k+'-done');
+    if (el) { el.checked = false; updateTogStyle(k); }
+  });
+}
 function fillTypeSelect() {
   const sel = document.getElementById('s-type');
   if (!sel) return;
   const cur = sel.value;
   // 기본 고정 옵션
   const fixed = [
+    {value:'', label:'— 선택 안함 —'},
     {value:'ugc', label:'UGC'},
     {value:'meme', label:'텍스트 밈'},
     {value:'creator', label:'크리에이터 릴스'},
@@ -841,12 +888,22 @@ function renderCal() {
         } else {
           const disp = s.typeCustom || tlbl(s.type);
           const chipStyle = `background:var(--a-bg);color:var(--a);border:0.5px solid var(--a-bd)`;
-          const ig=s.igStats||{}, tt=s.ttStats||{};
+          setStatusFlags(s.statusFlags||{});
+  const ig=s.igStats||{}, tt=s.ttStats||{};
           const hasIg=ig.views||ig.like||ig.comment||ig.share||ig.save||ig.repost;
           const hasTt=tt.views||tt.like||tt.comment||tt.save;
           let extra = '';
           // 레퍼런스 링크 CTA (맨 위, 값 있을 때만)
           if(s.ref) extra += `<a href="${s.ref}" target="_blank" onclick="event.stopPropagation()" style="display:block;text-align:center;margin-top:3px;padding:3px 0;background:var(--a-bg);color:var(--a);border:1px solid var(--a-bd);border-radius:5px;font-size:9.5px;font-weight:700;text-decoration:none">🔗 레퍼런스</a>`;
+          // 진행상태 배지
+          const sf=s.statusFlags||{};
+          if(sf.planDone||sf.shootDone||sf.editDone) {
+            extra += '<div style="display:flex;gap:2px;flex-wrap:wrap;margin-top:2px">';
+            if(sf.planDone)  extra += '<span style="font-size:8px;padding:1px 5px;border-radius:10px;background:var(--plan-bg);color:var(--plan-c);border:0.5px solid var(--plan-bd)">📋 기획</span>';
+            if(sf.shootDone) extra += '<span style="font-size:8px;padding:1px 5px;border-radius:10px;background:#e8f5f1;color:#0a7050;border:0.5px solid #9dd8c8">🎬 촬영</span>';
+            if(sf.editDone)  extra += '<span style="font-size:8px;padding:1px 5px;border-radius:10px;background:#f0eafa;color:#5030b8;border:0.5px solid #b8a8ef">✂️ 편집</span>';
+            extra += '</div>';
+          }
           // 내용 줄바꿈 허용
           if(s.content) extra += `<div class="chip-content" style="white-space:normal;line-height:1.5">${s.content.replace(/\n/g,"<br>")}</div>`;
           // 제품 줄바꿈 허용 (여러 제품)
@@ -986,6 +1043,7 @@ document.getElementById('btn-add-slot').addEventListener('click', () => openSlot
 function openSlotAdd(date) {
   S.editSlotId=null; clearSlotThumb();
   fillTypeSelect();
+  clearStatusFlags();
   document.getElementById('slot-title').textContent='슬롯 추가';
   ['s-ref','s-ref-ig','s-ref-tt','s-content','s-product'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('s-date').value=date||'';
@@ -1008,6 +1066,7 @@ function openSlotEdit(id) {
   document.getElementById('s-content').value=s.content||'';
   document.getElementById('s-product').value=s.product||'';
   if(s.thumb) applySlotThumb(s.thumb); else clearSlotThumb();
+  setStatusFlags(s.statusFlags||{});
   const ig=s.igStats||{}, tt=s.ttStats||{};
   ['views','like','comment','share','save','repost'].forEach(k=>{const el=document.getElementById('ig-'+k);if(el)el.value=ig[k]||'';});
   ['views','like','comment','save'].forEach(k=>{const el=document.getElementById('tt-'+k);if(el)el.value=tt[k]||'';});
@@ -1039,6 +1098,7 @@ document.getElementById('save-slot-btn').addEventListener('click', () => {
     content: _content,
     product: document.getElementById('s-product').value,
     thumb: S.slotThumb||'',
+    statusFlags: getStatusFlags(),
     igStats: {
       views:   parseInt(document.getElementById('ig-views')?.value)||0,
       like:    parseInt(document.getElementById('ig-like')?.value)||0,
