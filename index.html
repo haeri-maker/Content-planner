@@ -578,10 +578,11 @@ async function dbDel(table, id) {
   if (error) console.error('del', table, error);
 }
 async function loadDB() {
-  const [s, cr, e] = await Promise.all([
+  const [s, cr, e, lg] = await Promise.all([
     db.from('slots').select('*'),
     db.from('creators').select('*'),
     db.from('expenses').select('*'),
+    db.from('legends').select('*').order('sort_order'),
   ]);
   if (s.error) { console.error('slots load error:', s.error); alert('❌ 데이터 로드 실패!\n' + s.error.message); return; }
   ['labo','leps','nuri'].forEach(b => {
@@ -589,7 +590,16 @@ async function loadDB() {
     D[b].creators = (cr.data||[]).filter(r => r.brand===b).map(db2c);
     D[b].expenses = (e.data||[]).filter(r => r.brand===b).map(db2e);
   });
-  console.log('✅ DB loaded:', s.data?.length, 'slots');
+  // 범례 로드: Supabase에 있으면 우선, 없으면 localStorage, 그것도 없으면 기본값
+  if (lg.data && lg.data.length > 0) {
+    LEGS = lg.data.map(r => ({ id: r.id, name: r.name, color: r.color, sort_order: r.sort_order }));
+  } else {
+    // Supabase에 없으면 기본값을 Supabase에 저장
+    LEGS = [...DEFAULT_LEGS];
+    await saveLegs();
+  }
+  renderLeg();
+  console.log('✅ DB loaded:', s.data?.length, 'slots,', LEGS.length, 'legends');
 }
 function setupRT() {
   db.channel('planner-slots')
@@ -627,15 +637,23 @@ const bd = () => D[S.brand];
 const ML = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 
 /* ══ LEGEND ══ */
-let LEGS = JSON.parse(localStorage.getItem('cp-legs')||'null') || [
-  { id:'plan',    name:'기획',      color:'#8a6200' },
-  { id:'recruit', name:'섭외',      color:'#1a5a90' },
-  { id:'shoot',   name:'촬영일',    color:'#c8306a' },
-  { id:'ugc',     name:'UGC',       color:'#0a7050' },
-  { id:'meme',    name:'텍스트 밈', color:'#5030b8' },
-  { id:'creator', name:'크리에이터',color:'#c44d10' },
+const DEFAULT_LEGS = [
+  { id:'plan',    name:'기획',      color:'#8a6200', sort_order:0 },
+  { id:'recruit', name:'섭외',      color:'#1a5a90', sort_order:1 },
+  { id:'shoot',   name:'촬영일',    color:'#c8306a', sort_order:2 },
+  { id:'ugc',     name:'UGC',       color:'#0a7050', sort_order:3 },
+  { id:'meme',    name:'텍스트 밈', color:'#5030b8', sort_order:4 },
+  { id:'creator', name:'크리에이터',color:'#c44d10', sort_order:5 },
 ];
-function saveLegs() { localStorage.setItem('cp-legs', JSON.stringify(LEGS)); }
+let LEGS = [...DEFAULT_LEGS];
+async function saveLegs() {
+  localStorage.setItem('cp-legs', JSON.stringify(LEGS));
+  // Supabase에 upsert
+  for (let i=0; i<LEGS.length; i++) {
+    const l = LEGS[i];
+    await db.from('legends').upsert({ id: l.id, name: l.name, color: l.color, sort_order: i }, { onConflict: 'id' });
+  }
+}
 function updateTogStyle(key) {
   const ids = {plan:'s-plan-done', shoot:'s-shoot-done', edit:'s-edit-done'};
   const togs = {plan:'tog-plan', shoot:'tog-shoot', edit:'tog-edit'};
@@ -711,16 +729,20 @@ function renderLegEdit() {
     + '<button class="btn btn-d btn-xs" onclick="delLeg('+i+');renderLegEdit()">삭제</button></div>'
   ).join('');
 }
-function delLeg(i) {
+async function delLeg(i) {
   if (!confirm("'"+LEGS[i].name+"' 범례를 삭제할까요?")) return;
-  LEGS.splice(i,1); saveLegs(); renderLeg();
+  const id = LEGS[i].id;
+  LEGS.splice(i,1);
+  await db.from('legends').delete().eq('id', id);
+  await saveLegs();
+  renderLeg();
 }
-function addLegend() {
+async function addLegend() {
   const name = document.getElementById('leg-name').value.trim();
   const color = document.getElementById('leg-color').value;
   if (!name) return;
-  LEGS.push({ id:'leg-'+Math.random().toString(36).slice(2,7), name, color });
-  saveLegs(); renderLeg();
+  LEGS.push({ id:'leg-'+Math.random().toString(36).slice(2,7), name, color, sort_order: LEGS.length });
+  await saveLegs(); renderLeg();
   document.getElementById('leg-name').value = '';
 }
 
