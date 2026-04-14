@@ -1387,11 +1387,17 @@ function weekDates(offset) {
   return dates;
 }
 function getReportKey(brand, offset) { return `report-${brand}-offset${offset}`; }
-function loadReportData(brand, offset) {
-  try { return JSON.parse(localStorage.getItem(getReportKey(brand,offset))||'{}'); } catch{ return {}; }
+async function loadReportData(brand, offset) {
+  const key = getReportKey(brand, offset);
+  try {
+    const { data } = await db.from('reports').select('data').eq('key', key).single();
+    return data?.data || {};
+  } catch { return {}; }
 }
-function saveReportData(brand, offset, data) {
-  localStorage.setItem(getReportKey(brand,offset), JSON.stringify(data));
+async function saveReportData(brand, offset, data) {
+  const key = getReportKey(brand, offset);
+  localStorage.setItem(key, JSON.stringify(data)); // 로컬 캐시
+  await db.from('reports').upsert({ key, data }, { onConflict: 'key' });
 }
 
 function calcChange(cur, prev) {
@@ -1453,7 +1459,7 @@ function renderThumbBox(brand, offset, containerId) {
   }).join('');
 }
 
-function renderReport() {
+async function renderReport() {
   const brand = S.brand;
   const curW = getWeekRange(reportOffset);
   const prevW = getWeekRange(reportOffset-1);
@@ -1461,8 +1467,8 @@ function renderReport() {
   document.getElementById('report-date-range').textContent =
     `${fmt(prevW.start)} - ${fmt(prevW.end)} vs ${fmt(curW.start)} - ${fmt(curW.end)}`;
 
-  const curData  = loadReportData(brand, reportOffset);
-  const prevData = loadReportData(brand, reportOffset-1);
+  const curData  = await loadReportData(brand, reportOffset);
+  const prevData = await loadReportData(brand, reportOffset-1);
 
   const metricRows = REPORT_METRICS.map(m => {
     const curVal = curData[m]||'';
@@ -1522,24 +1528,24 @@ function renderReport() {
 
   // 지표 입력 이벤트
   document.querySelectorAll('.rep-input').forEach(inp => {
-    inp.addEventListener('input', () => {
+    inp.addEventListener('input', async () => {
       const metric = inp.dataset.metric, week = inp.dataset.week;
       const offset = week==='cur' ? reportOffset : reportOffset-1;
-      const data = loadReportData(brand, offset);
+      const data = await loadReportData(brand, offset);
       data[metric] = inp.value;
-      saveReportData(brand, offset, data);
+      await saveReportData(brand, offset, data);
       // 증감률만 다시 계산 (전체 re-render 없이)
-      renderMetricChange();
+      await renderMetricChange();
     });
   });
 
   renderReportArchive(brand);
 }
 
-function renderMetricChange() {
+async function renderMetricChange() {
   const brand = S.brand;
-  const curData  = loadReportData(brand, reportOffset);
-  const prevData = loadReportData(brand, reportOffset-1);
+  const curData  = await loadReportData(brand, reportOffset);
+  const prevData = await loadReportData(brand, reportOffset-1);
   document.querySelectorAll('.rep-input').forEach(inp => {
     const m = inp.dataset.metric, week = inp.dataset.week;
     const curVal = curData[m]||'', prevVal = prevData[m]||'';
@@ -1590,8 +1596,8 @@ function renderReportArchive(brand) {
   }).join('');
 }
 
-document.getElementById('btn-report-prev').addEventListener('click', ()=>{ reportOffset--; renderReport(); });
-document.getElementById('btn-report-next').addEventListener('click', ()=>{ if(reportOffset<0){reportOffset++;renderReport();} });
+document.getElementById('btn-report-prev').addEventListener('click', async ()=>{ reportOffset--; await renderReport(); });
+document.getElementById('btn-report-next').addEventListener('click', async ()=>{ if(reportOffset<0){reportOffset++; await renderReport();} });
 document.getElementById('btn-save-report').addEventListener('click', ()=>{
   // 현재 보고 있는 offset 아카이브 저장 (현재 데이터는 이미 localStorage에 있음)
   alert('저장되었어요! 아래 아카이브에서 확인하세요 ✅');
