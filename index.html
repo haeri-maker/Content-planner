@@ -589,21 +589,16 @@ async function dbDel(table, id) {
   if (error) console.error('del', table, error);
 }
 async function loadDB() {
-  // slots 먼저 로드 (thumb 포함이라 느릴 수 있음 - 브랜드별로 분리)
-  const [sLabo, sLeps, sNuri, cr, e, lg] = await Promise.all([
-    db.from('slots').select('*').eq('brand','labo'),
-    db.from('slots').select('*').eq('brand','leps'),
-    db.from('slots').select('*').eq('brand','nuri'),
+  const SLOT_COLS = 'id,brand,date,type,type_custom,title,time,ref,ig_url,tt_url,ig_stats,tt_stats,content,product,shoot_location,shoot_director,shoot_creators,memo';
+  const [s, cr, e, lg] = await Promise.all([
+    db.from('slots').select(SLOT_COLS),
     db.from('creators').select('*'),
     db.from('expenses').select('*'),
     db.from('legends').select('*').order('sort_order'),
   ]);
-  const sErr = sLabo.error || sLeps.error || sNuri.error;
-  if (sErr) { console.error('slots load error:', sErr); alert('❌ 데이터 로드 실패!\n' + sErr.message); return; }
-  D['labo'].slots = (sLabo.data||[]).map(db2s);
-  D['leps'].slots = (sLeps.data||[]).map(db2s);
-  D['nuri'].slots = (sNuri.data||[]).map(db2s);
+  if (s.error) { console.error('slots load error:', s.error); alert('❌ 데이터 로드 실패!\n' + s.error.message); return; }
   ['labo','leps','nuri'].forEach(b => {
+    D[b].slots    = (s.data||[]).filter(r => r.brand===b).map(db2s);
     D[b].creators = (cr.data||[]).filter(r => r.brand===b).map(db2c);
     D[b].expenses = (e.data||[]).filter(r => r.brand===b).map(db2e);
   });
@@ -614,7 +609,23 @@ async function loadDB() {
     await saveLegs();
   }
   renderLeg();
-  console.log('✅ DB loaded:', D.labo.slots.length+D.leps.slots.length+D.nuri.slots.length, 'slots,', LEGS.length, 'legends');
+  console.log('✅ DB loaded:', s.data?.length, 'slots');
+  // 썸네일 백그라운드 로드
+  loadThumbsBackground();
+}
+
+async function loadThumbsBackground() {
+  const { data } = await db.from('slots').select('id,thumb');
+  if (!data) return;
+  let changed = false;
+  data.forEach(r => {
+    if (!r.thumb) return;
+    ['labo','leps','nuri'].forEach(b => {
+      const s = D[b].slots.find(x=>x._id===r.id);
+      if (s && !s.thumb) { s.thumb = r.thumb; changed = true; }
+    });
+  });
+  if (changed) renderCal();
 }
 function setupRT() {
   db.channel('planner-slots')
