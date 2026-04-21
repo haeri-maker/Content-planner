@@ -1437,23 +1437,29 @@ function renderThumbBox(brand, offset, containerId) {
   // 반응형: 슬롯 수에 따라 썸네일 너비 결정
   const n = slots.length;
   const minW = n <= 2 ? 200 : n <= 4 ? 160 : n <= 6 ? 130 : 110;
+  // 4열 그리드
+  container.style.display = 'grid';
+  container.style.gridTemplateColumns = 'repeat(4, 1fr)';
+  container.style.gap = '10px';
+  container.style.padding = '10px';
+  container.style.alignItems = 'start';
   container.innerHTML = slots.map(s => {
     const ig = s.igStats||{}, tt = s.ttStats||{};
     const hasIg = ig.like||ig.comment||ig.share||ig.save||ig.repost;
     const hasTt = tt.like||tt.comment||tt.save;
     const igRow = hasIg ? `<div style="margin-top:6px;padding:6px 8px;background:#faedf3;border-radius:6px;color:#c8306a;line-height:1.9">
         <div style="font-size:11px;font-weight:700;margin-bottom:3px">📸 Instagram</div>
-        <div style="font-size:11px;white-space:nowrap">${ig.views?`👁 ${Number(ig.views).toLocaleString()} &nbsp;`:''}❤️ ${ig.like||0} &nbsp;💬 ${ig.comment||0} &nbsp;↗ ${ig.share||0} &nbsp;🔖 ${ig.save||0} &nbsp;🔁 ${ig.repost||0}</div>
+        <div style="font-size:10.5px;word-break:break-all">${ig.views?`👁 ${Number(ig.views).toLocaleString()} &nbsp;`:''}❤️ ${ig.like||0} &nbsp;💬 ${ig.comment||0} &nbsp;↗ ${ig.share||0} &nbsp;🔖 ${ig.save||0} &nbsp;🔁 ${ig.repost||0}</div>
       </div>` : '';
     const ttRow = hasTt ? `<div style="margin-top:4px;padding:6px 8px;background:#f0f0f0;border-radius:6px;color:#333;line-height:1.9">
         <div style="font-size:11px;font-weight:700;margin-bottom:3px">🎵 TikTok</div>
-        <div style="font-size:11px;white-space:nowrap">${tt.views?`👁 ${Number(tt.views).toLocaleString()} &nbsp;`:''}❤️ ${tt.like||0} &nbsp;💬 ${tt.comment||0} &nbsp;🔖 ${tt.save||0}</div>
+        <div style="font-size:10.5px;word-break:break-all">${tt.views?`👁 ${Number(tt.views).toLocaleString()} &nbsp;`:''}❤️ ${tt.like||0} &nbsp;💬 ${tt.comment||0} &nbsp;🔖 ${tt.save||0}</div>
       </div>` : '';
     const contentLines = (s.content||s.title||'').split(String.fromCharCode(10)).join('<br>'); const productLines = s.product ? s.product.split(String.fromCharCode(10)).join('<br>') : '';
-    return `<div style="min-width:${minW}px;flex:1;max-width:${Math.max(minW+60, 240)}px">
+    return `<div style="min-width:0;overflow:hidden">
       <img src="${s.thumb}" style="width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:8px;border:1px solid var(--bd);display:block">
-      ${contentLines?`<div style="font-size:12px;color:var(--tx);margin-top:5px;line-height:1.5;font-weight:500">${contentLines}</div>`:''}
-      ${productLines?`<div style="font-size:11px;color:var(--tx2);margin-top:2px;line-height:1.5">📦 ${productLines}</div>`:''}
+      ${contentLines?`<div style="font-size:11px;color:var(--tx);margin-top:5px;line-height:1.4;font-weight:500;word-break:break-word;overflow-wrap:break-word">${contentLines}</div>`:''}
+      ${productLines?`<div style="font-size:10px;color:var(--tx2);margin-top:2px;line-height:1.4;word-break:break-word">📦 ${productLines}</div>`:''}
       ${igRow}${ttRow}
     </div>`;
   }).join('');
@@ -1494,11 +1500,11 @@ async function renderReport() {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
       <div class="card">
         <div class="card-h">지난 주 ${fmt(prevW.start)} – ${fmt(prevW.end)}</div>
-        <div id="thumbbox-${reportOffset-1}" style="padding:10px;display:flex;gap:8px;flex-wrap:wrap;min-height:90px;align-items:flex-start"></div>
+        <div id="thumbbox-${reportOffset-1}" style="min-height:90px;"></div>
       </div>
       <div class="card">
         <div class="card-h">이번 주 ${fmt(curW.start)} – ${fmt(curW.end)}</div>
-        <div id="thumbbox-${reportOffset}" style="padding:10px;display:flex;gap:8px;flex-wrap:wrap;min-height:90px;align-items:flex-start"></div>
+        <div id="thumbbox-${reportOffset}" style="min-height:90px;"></div>
       </div>
     </div>
     <div class="card">
