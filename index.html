@@ -564,6 +564,17 @@ function db2e(r) {
 }
 
 /* ══ DB OPS ══ */
+// 썸네일 개별 로드 (클릭 시)
+async function loadThumb(slotId) {
+  const s = bd().slots.find(x=>x._id===slotId);
+  if (!s || s.thumb) return; // 이미 있으면 스킵
+  const { data } = await db.from('slots').select('thumb').eq('id', slotId).single();
+  if (data?.thumb) {
+    s.thumb = data.thumb;
+    renderCal();
+  }
+}
+
 async function dbSave(table, row) {
   const { error } = await db.from(table).upsert(row, { onConflict: 'id' });
   if (error) {
@@ -578,28 +589,32 @@ async function dbDel(table, id) {
   if (error) console.error('del', table, error);
 }
 async function loadDB() {
-  const [s, cr, e, lg] = await Promise.all([
-    db.from('slots').select('*'),
+  // slots 먼저 로드 (thumb 포함이라 느릴 수 있음 - 브랜드별로 분리)
+  const [sLabo, sLeps, sNuri, cr, e, lg] = await Promise.all([
+    db.from('slots').select('*').eq('brand','labo'),
+    db.from('slots').select('*').eq('brand','leps'),
+    db.from('slots').select('*').eq('brand','nuri'),
     db.from('creators').select('*'),
     db.from('expenses').select('*'),
     db.from('legends').select('*').order('sort_order'),
   ]);
-  if (s.error) { console.error('slots load error:', s.error); alert('❌ 데이터 로드 실패!\n' + s.error.message); return; }
+  const sErr = sLabo.error || sLeps.error || sNuri.error;
+  if (sErr) { console.error('slots load error:', sErr); alert('❌ 데이터 로드 실패!\n' + sErr.message); return; }
+  D['labo'].slots = (sLabo.data||[]).map(db2s);
+  D['leps'].slots = (sLeps.data||[]).map(db2s);
+  D['nuri'].slots = (sNuri.data||[]).map(db2s);
   ['labo','leps','nuri'].forEach(b => {
-    D[b].slots    = (s.data||[]).filter(r => r.brand===b).map(db2s);
     D[b].creators = (cr.data||[]).filter(r => r.brand===b).map(db2c);
     D[b].expenses = (e.data||[]).filter(r => r.brand===b).map(db2e);
   });
-  // 범례 로드: Supabase에 있으면 우선, 없으면 localStorage, 그것도 없으면 기본값
   if (lg.data && lg.data.length > 0) {
     LEGS = lg.data.map(r => ({ id: r.id, name: r.name, color: r.color, sort_order: r.sort_order }));
   } else {
-    // Supabase에 없으면 기본값을 Supabase에 저장
     LEGS = [...DEFAULT_LEGS];
     await saveLegs();
   }
   renderLeg();
-  console.log('✅ DB loaded:', s.data?.length, 'slots,', LEGS.length, 'legends');
+  console.log('✅ DB loaded:', D.labo.slots.length+D.leps.slots.length+D.nuri.slots.length, 'slots,', LEGS.length, 'legends');
 }
 function setupRT() {
   db.channel('planner-slots')
