@@ -267,9 +267,15 @@ td.tdn{color:var(--tx)}
 <!-- CREATORS -->
 <div class="panel" id="panel-creators">
   <div class="ph">
-    <div><div class="pt" id="cr-title">Laboreve 크리에이터 & 예산</div><div class="ps">섭외 현황</div></div>
+    <div>
+      <div class="pt" id="cr-title">Laboreve 크리에이터</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+        <button class="mbtn" onclick="crMonthNav(-1)">‹</button>
+        <span id="cr-month-lbl" style="font-size:12px;font-weight:500;min-width:70px;text-align:center"></span>
+        <button class="mbtn" onclick="crMonthNav(1)">›</button>
+      </div>
+    </div>
     <div class="row">
-      <button class="btn btn-g btn-sm" id="btn-archive-cr" onclick="archiveCreators()">📁 아카이브</button>
       <button class="btn btn-p" id="btn-add-cr" onclick="openCrModal(null)">+ 크리에이터</button>
     </div>
   </div>
@@ -1459,7 +1465,65 @@ document.getElementById('save-cr-btn').addEventListener('click', async () => {
   if(obj) dbSave('creators',c2db(obj,S.brand));
   closeOv('ov-cr'); renderCreators(); updateSB();
 });
+async function renderCreatorsArchive(month) {
+  const el = document.getElementById('cr-list');
+  const statsEl = document.getElementById('cr-stats');
+  el.innerHTML = '<div class="empty"><div class="empty-i">⏳</div>불러오는 중...</div>';
+  const data = await loadArchiveMonth(S.brand, month);
+  if (!data || !data.creators?.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-i">📭</div>'+month+' 데이터 없음</div>';
+    statsEl.innerHTML = '';
+    return;
+  }
+  const crs = data.creators;
+  const sl={new:'미접촉',contact:'연락중',confirmed:'확정',done:'완료'};
+  const sb={new:'b-gray',contact:'b-recruit',confirmed:'b-green',done:'b-green'};
+  const tot = crs.reduce((s,c)=>s+(c.fee||0),0);
+  statsEl.innerHTML = `
+    <div class="stat"><div class="stat-v">${crs.length}</div><div class="stat-l">전체</div></div>
+    <div class="stat"><div class="stat-v" style="color:var(--nuri)">${crs.filter(c=>c.status==='confirmed'||c.status==='done').length}</div><div class="stat-l">확정/완료</div></div>
+    <div class="stat"><div class="stat-v" style="color:var(--cr-c)">₩${tot.toLocaleString()}</div><div class="stat-l">총 비용</div></div>
+    <div class="stat"><div class="stat-v" style="font-size:12px;color:var(--tx3)">${month}</div><div class="stat-l">아카이브</div></div>`;
+  el.innerHTML = crs.map(cr => {
+    const videos = data.videos?.[cr._id]||[];
+    return `<div class="cr-card" style="opacity:.85">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
+        <div style="width:48px;height:48px;border-radius:50%;overflow:hidden;background:var(--bg3);border:2px solid var(--bd);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          ${cr.thumb?`<img src="${cr.thumb}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:20px">👤</span>'}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600">${cr.name}</div>
+          <div style="font-size:11px;color:var(--tx2)">${cr.handle}</div>
+        </div>
+        <div style="text-align:right">
+          <span class="badge ${sb[cr.status]}">${sl[cr.status]}</span>
+          <div style="font-size:12px;font-weight:500;color:var(--cr-c);font-family:'DM Mono',monospace;margin-top:3px">${cr.fee?'₩'+cr.fee.toLocaleString():''}</div>
+        </div>
+      </div>
+      ${videos.length?`<div style="border-top:1px solid var(--bd);padding-top:7px">
+        <div style="font-size:10px;color:var(--tx3);margin-bottom:5px">🎬 영상 ${videos.length}개</div>
+        ${videos.map(v=>`<div style="font-size:11px;color:var(--tx2);padding:3px 0;display:flex;align-items:center;gap:6px">
+          <span style="flex:1">${v.title||'제목없음'}</span>
+          ${v.igUrl?`<a href="${v.igUrl}" target="_blank" style="font-size:9.5px;padding:2px 7px;border-radius:20px;background:#c8306a;color:#fff;text-decoration:none">📸</a>`:''}
+          ${v.ttUrl?`<a href="${v.ttUrl}" target="_blank" style="font-size:9.5px;padding:2px 7px;border-radius:20px;background:#111;color:#fff;text-decoration:none">🎵</a>`:''}
+        </div>`).join('')}
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
 function renderCreators() {
+  const monthLbl = document.getElementById('cr-month-lbl');
+  if (monthLbl) monthLbl.textContent = getCrMonth(crMonthOffset).replace('-','년 ')+'월';
+  // 이번달이 아니면 아카이브 조회
+  if (crMonthOffset < 0) {
+    const addBtn = document.getElementById('btn-add-cr');
+    if (addBtn) addBtn.style.display = 'none';
+    renderCreatorsArchive(getCrMonth(crMonthOffset));
+    return;
+  }
+  const addBtn = document.getElementById('btn-add-cr');
+  if (addBtn) addBtn.style.display = '';
   const crs=bd().creators;
   const sl={new:'미접촉',contact:'연락중',confirmed:'확정',done:'완료'};
   const sb={new:'b-gray',contact:'b-recruit',confirmed:'b-green',done:'b-green'};
@@ -1580,6 +1644,7 @@ function updateSB() {
   await loadDB();
   await loadUGC();
   await loadAllCreatorVideos();
+  await autoArchiveIfNeeded();
   switchBrand('nuri');
   setupRT();
 })();
@@ -2244,26 +2309,66 @@ async function updateVideoField(creatorId, videoId, field, value) {
   if (v) { v[field]=value; await saveCreatorVideo(creatorId, v); }
 }
 
-// 아카이브
-async function archiveCreators() {
-  const month = new Date().toISOString().slice(0,7);
-  if (!confirm(month+' 크리에이터 아카이브하고 리셋할까요?\n기존 데이터는 아카이브에 보관됩니다.')) return;
-  const crs = bd().creators;
-  const videos = {};
-  crs.forEach(c => { videos[c._id] = CREATOR_VIDEOS[c._id]||[]; });
-  const archiveData = { creators: crs, videos };
-  await db.from('creator_archive').upsert({ id: S.brand+'-'+month, brand: S.brand, month, data: archiveData }, { onConflict: 'id' });
-  // 크리에이터 + 영상 삭제
-  for (const c of crs) {
-    await db.from('creator_videos').delete().eq('creator_id', c._id);
-    await dbDel('creators', c._id);
-  }
-  D[S.brand].creators = [];
-  Object.keys(CREATOR_VIDEOS).forEach(k => { delete CREATOR_VIDEOS[k]; });
-  alert('✅ 아카이브 완료!');
+/* ══ CREATOR MONTH ══ */
+let crMonthOffset = 0;
+const CREATOR_ARCHIVE_DATA = {};
+
+function getCrMonth(offset) {
+  const d = new Date();
+  d.setMonth(d.getMonth() + offset);
+  return d.toISOString().slice(0,7);
+}
+function crMonthNav(dir) {
+  if (dir > 0 && crMonthOffset >= 0) return;
+  crMonthOffset += dir;
   renderCreators();
 }
 
+async function autoArchiveIfNeeded() {
+  const thisMonth = new Date().toISOString().slice(0,7);
+  const lastKey = 'cr-last-archive-'+S.brand;
+  if (localStorage.getItem(lastKey) === thisMonth) return;
+  const crs = bd().creators;
+  if (!crs.length) { localStorage.setItem(lastKey, thisMonth); return; }
+  const prevMonth = (() => { const d=new Date(); d.setMonth(d.getMonth()-1); return d.toISOString().slice(0,7); })();
+  await doArchive(prevMonth);
+  localStorage.setItem(lastKey, thisMonth);
+  console.log('✅ 자동 아카이브:', prevMonth);
+}
+
+async function doArchive(month) {
+  const crs = bd().creators;
+  const videos = {};
+  crs.forEach(cr => { videos[cr._id] = CREATOR_VIDEOS[cr._id]||[]; });
+  await db.from('creator_archive').upsert(
+    { id: S.brand+'-'+month, brand: S.brand, month, data: { creators: crs, videos } },
+    { onConflict: 'id' }
+  );
+  for (const cr of crs) {
+    await db.from('creator_videos').delete().eq('creator_id', cr._id);
+    await dbDel('creators', cr._id);
+  }
+  D[S.brand].creators = [];
+  Object.keys(CREATOR_VIDEOS).forEach(k => { delete CREATOR_VIDEOS[k]; });
+}
+
+async function loadArchiveMonth(brand, month) {
+  const key = brand+'-'+month;
+  if (CREATOR_ARCHIVE_DATA[key]) return CREATOR_ARCHIVE_DATA[key];
+  try {
+    const { data } = await db.from('creator_archive').select('data').eq('id', key).single();
+    if (data?.data) { CREATOR_ARCHIVE_DATA[key] = data.data; return data.data; }
+  } catch {}
+  return null;
+}
+
+async function archiveCreators() {
+  const month = getCrMonth(-1);
+  if (!confirm(month+' 크리에이터 아카이브하고 리셋할까요?')) return;
+  await doArchive(month);
+  alert('✅ 아카이브 완료!');
+  renderCreators();
+}
 
 
 // 영상 편집 (링크)
