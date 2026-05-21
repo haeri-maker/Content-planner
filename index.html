@@ -2390,19 +2390,15 @@ async function delCreatorVideo(videoId, creatorId) {
 }
 
 // 영상 추가 인라인
-async function addCreatorVideo(creatorId) {
-  const v = { id: gid(), title:'', igUrl:'', ttUrl:'', date: new Date().toISOString().slice(0,10) };
-  if (!CREATOR_VIDEOS[creatorId]) CREATOR_VIDEOS[creatorId] = [];
-  CREATOR_VIDEOS[creatorId].push(v);
-  await saveCreatorVideo(creatorId, v);
-  // 편집 모달 바로 열기
+function addCreatorVideo(creatorId) {
+  // 모달만 열고 저장은 saveVideoEdit에서
   _editVideoCreatorId = creatorId;
-  _editVideoId = v.id;
+  _editVideoId = gid(); // 새 ID 미리 생성
+  _isNewVideo = true;
   document.getElementById('v-title').value = '';
   document.getElementById('v-ig').value = '';
   document.getElementById('v-tt').value = '';
   openOv('ov-video');
-  renderCreators();
 }
 async function updateVideoField(creatorId, videoId, field, value) {
   const v = (CREATOR_VIDEOS[creatorId]||[]).find(x=>x.id===videoId);
@@ -2484,12 +2480,21 @@ function openVideoEdit(creatorId, videoId) {
   openOv('ov-video');
 }
 
+let _isNewVideo = false;
 async function saveVideoEdit() {
-  const v = (CREATOR_VIDEOS[_editVideoCreatorId]||[]).find(x=>x.id===_editVideoId);
-  if (!v) return;
-  v.title = document.getElementById('v-title').value;
-  v.igUrl = document.getElementById('v-ig').value.trim();
-  v.ttUrl = document.getElementById('v-tt').value.trim();
+  const title = document.getElementById('v-title').value;
+  const igUrl = document.getElementById('v-ig').value.trim();
+  const ttUrl = document.getElementById('v-tt').value.trim();
+  if (!title && !igUrl && !ttUrl) { closeOv('ov-video'); return; }
+  if (!CREATOR_VIDEOS[_editVideoCreatorId]) CREATOR_VIDEOS[_editVideoCreatorId] = [];
+  let v = CREATOR_VIDEOS[_editVideoCreatorId].find(x=>x.id===_editVideoId);
+  if (!v) {
+    v = { id: _editVideoId, title, igUrl, ttUrl, date: new Date().toISOString().slice(0,10) };
+    CREATOR_VIDEOS[_editVideoCreatorId].push(v);
+  } else {
+    v.title = title; v.igUrl = igUrl; v.ttUrl = ttUrl;
+  }
+  _isNewVideo = false;
   await saveCreatorVideo(_editVideoCreatorId, v);
   closeOv('ov-video');
   renderCreators();
