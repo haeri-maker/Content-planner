@@ -1479,6 +1479,15 @@ document.getElementById('save-cr-btn').addEventListener('click', async () => {
   if(S.editCrId){obj=bd().creators.find(x=>x._id===S.editCrId);if(obj)Object.assign(obj,data);}
   else{obj={_id:gid(),...data};bd().creators.push(obj);}
   if(obj) dbSave('creators',c2db(obj,S.brand));
+  // 업로드일 기준으로 월 자동 전환
+  const uploadDate = document.getElementById('c-date').value;
+  if (uploadDate) {
+    const uploadMonth = uploadDate.slice(0,7);
+    const today = new Date();
+    const todayMonth = today.toISOString().slice(0,7);
+    const diff = (new Date(uploadMonth+'-01') - new Date(todayMonth+'-01')) / (1000*60*60*24*30);
+    crMonthOffset = Math.round(diff);
+  }
   closeOv('ov-cr'); renderCreators(); updateSB();
 });
 async function renderCreatorsArchive(month) {
@@ -1536,6 +1545,7 @@ async function renderCreatorsArchive(month) {
 }
 
 function renderCreators() {
+  // budget 별도 패널 없음
   const monthLbl = document.getElementById('cr-month-lbl');
   if (monthLbl) monthLbl.textContent = getCrMonth(crMonthOffset).replace('-','년 ')+'월';
   // 이번달이 아니면 아카이브 조회
@@ -1626,6 +1636,7 @@ document.getElementById('save-exp-btn').addEventListener('click', () => {
   closeOv('ov-exp'); renderBudget(); updateSB();
 });
 function renderBudget() {
+  if (!document.getElementById('budget-stats')) return;
   const d=bd();
   const cr=d.creators.reduce((s,c)=>s+(c.fee||0),0);
   const exp=d.expenses.reduce((s,e)=>s+(e.amount||0),0);
