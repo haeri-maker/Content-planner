@@ -1476,8 +1476,18 @@ document.getElementById('save-cr-btn').addEventListener('click', async () => {
     profileLink:document.getElementById('c-profile').value};
   if(!data.name) return;
   let obj;
-  if(S.editCrId){obj=bd().creators.find(x=>x._id===S.editCrId);if(obj)Object.assign(obj,data);}
-  else{obj={_id:gid(),...data};bd().creators.push(obj);}
+  if(S.editCrId){
+    obj=bd().creators.find(x=>x._id===S.editCrId);
+    if(obj){ Object.assign(obj,data); }
+    else {
+      // 아카이브에서 편집 - creators에 다시 추가
+      obj={_id:S.editCrId,...data};
+      bd().creators.push(obj);
+    }
+  } else {
+    obj={_id:gid(),...data};
+    bd().creators.push(obj);
+  }
   if(obj) dbSave('creators',c2db(obj,S.brand));
   // 업로드일 기준으로 월 자동 전환
   const uploadDate = document.getElementById('c-date').value;
