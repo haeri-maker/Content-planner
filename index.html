@@ -1546,7 +1546,7 @@ function renderCreators() {
     return;
   }
   const addBtn = document.getElementById('btn-add-cr');
-  if (addBtn) addBtn.style.display = '';
+  if (addBtn) addBtn.style.display = ''; // 이번달 이후는 현재 데이터 표시
   const crs=bd().creators;
   const sl={new:'미접촉',contact:'연락중',confirmed:'확정',done:'완료'};
   const sb={new:'b-gray',contact:'b-recruit',confirmed:'b-green',done:'b-green'};
@@ -2341,7 +2341,6 @@ function getCrMonth(offset) {
   return d.toISOString().slice(0,7);
 }
 function crMonthNav(dir) {
-  if (dir > 0 && crMonthOffset >= 0) return;
   crMonthOffset += dir;
   renderCreators();
 }
