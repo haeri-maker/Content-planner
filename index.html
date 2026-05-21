@@ -573,6 +573,22 @@ td.tdn{color:var(--tx)}
   </div>
 </div>
 
+<!-- Video edit modal -->
+<div class="ov" id="ov-video">
+  <div class="modal" style="width:420px">
+    <div class="mh">영상 편집<button class="xbtn" data-close="ov-video">×</button></div>
+    <div class="mb">
+      <div class="fg fg1"><div class="field"><label>영상 제목</label><input type="text" id="v-title" placeholder="예: 아침 루틴 영상"></div></div>
+      <div class="fg fg1"><div class="field"><label>📸 Instagram 링크</label><input type="url" id="v-ig" placeholder="https://instagram.com/p/..."></div></div>
+      <div class="fg fg1"><div class="field"><label>🎵 TikTok 링크</label><input type="url" id="v-tt" placeholder="https://tiktok.com/..."></div></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-g" data-close="ov-video">취소</button>
+      <button class="btn btn-p" onclick="saveVideoEdit()">저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- Legend modal -->
 <div class="ov" id="ov-legend">
   <div class="modal" style="width:400px">
@@ -1486,28 +1502,35 @@ async function renderCreatorsArchive(month) {
     <div class="stat"><div class="stat-v" style="font-size:12px;color:var(--tx3)">${month}</div><div class="stat-l">아카이브</div></div>`;
   el.innerHTML = crs.map(cr => {
     const videos = data.videos?.[cr._id]||[];
-    return `<div class="cr-card" style="opacity:.85">
-      <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
-        <div style="width:48px;height:48px;border-radius:50%;overflow:hidden;background:var(--bg3);border:2px solid var(--bd);flex-shrink:0;display:flex;align-items:center;justify-content:center">
-          ${cr.thumb?`<img src="${cr.thumb}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:20px">👤</span>'}
+    // 아카이브 크리에이터도 CREATOR_VIDEOS에 로드
+    if (!CREATOR_VIDEOS[cr._id]) CREATOR_VIDEOS[cr._id] = videos;
+    return `<div class="cr-card">
+      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px">
+        <div style="width:56px;height:56px;border-radius:50%;overflow:hidden;background:var(--bg3);border:2px solid var(--bd);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          ${cr.thumb?`<img src="${cr.thumb}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:24px">👤</span>'}
         </div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:600">${cr.name}</div>
-          <div style="font-size:11px;color:var(--tx2)">${cr.handle}</div>
-        </div>
-        <div style="text-align:right">
-          <span class="badge ${sb[cr.status]}">${sl[cr.status]}</span>
-          <div style="font-size:12px;font-weight:500;color:var(--cr-c);font-family:'DM Mono',monospace;margin-top:3px">${cr.fee?'₩'+cr.fee.toLocaleString():''}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+            <div><div style="font-size:14px;font-weight:600">${cr.name}</div><div style="font-size:11px;color:var(--tx2)">${cr.handle}</div></div>
+            <span class="badge ${sb[cr.status]}">${sl[cr.status]}</span>
+          </div>
+          <div style="font-size:12px;font-weight:500;color:var(--cr-c);font-family:'DM Mono',monospace">${cr.fee?'₩'+cr.fee.toLocaleString():''}</div>
         </div>
       </div>
-      ${videos.length?`<div style="border-top:1px solid var(--bd);padding-top:7px">
-        <div style="font-size:10px;color:var(--tx3);margin-bottom:5px">🎬 영상 ${videos.length}개</div>
-        ${videos.map(v=>`<div style="font-size:11px;color:var(--tx2);padding:3px 0;display:flex;align-items:center;gap:6px">
-          <span style="flex:1">${v.title||'제목없음'}</span>
-          ${v.igUrl?`<a href="${v.igUrl}" target="_blank" style="font-size:9.5px;padding:2px 7px;border-radius:20px;background:#c8306a;color:#fff;text-decoration:none">📸</a>`:''}
-          ${v.ttUrl?`<a href="${v.ttUrl}" target="_blank" style="font-size:9.5px;padding:2px 7px;border-radius:20px;background:#111;color:#fff;text-decoration:none">🎵</a>`:''}
-        </div>`).join('')}
-      </div>`:''}
+      <div style="border-top:1px solid var(--bd);padding-top:9px">
+        <div style="font-size:10.5px;font-weight:600;color:var(--tx2);margin-bottom:6px">🎬 영상 목록 (${videos.length})</div>
+        ${videos.map(v=>`
+          <div style="display:flex;align-items:center;gap:7px;padding:7px 9px;background:var(--bg3);border-radius:var(--rs);border:1px solid var(--bd);margin-bottom:5px">
+            <span style="flex:1;font-size:11.5px;color:var(--tx)">${v.title||'제목없음'}</span>
+            ${v.igUrl?`<a href="${v.igUrl}" target="_blank" style="font-size:10px;padding:3px 9px;border-radius:20px;background:#c8306a;color:#fff;text-decoration:none;font-weight:600;flex-shrink:0">📸 IG</a>`:''}
+            ${v.ttUrl?`<a href="${v.ttUrl}" target="_blank" style="font-size:10px;padding:3px 9px;border-radius:20px;background:#111;color:#fff;text-decoration:none;font-weight:600;flex-shrink:0">🎵 TT</a>`:''}
+            <button onclick="openVideoEdit('${cr._id}','${v.id}')" style="font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid var(--bd2);background:transparent;color:var(--tx2);cursor:pointer;flex-shrink:0">편집</button>
+          </div>`).join('')}
+        <button onclick="addCreatorVideo('${cr._id}')" style="width:100%;padding:6px;border:1.5px dashed var(--bd2);border-radius:var(--rs);background:transparent;color:var(--tx3);font-size:11px;cursor:pointer;margin-top:3px">+ 영상 추가</button>
+      </div>
+      <div style="display:flex;gap:5px;margin-top:9px;border-top:1px solid var(--bd);padding-top:7px">
+        <button class="btn btn-g btn-sm" onclick="openCrModal('${cr._id}')">편집</button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -1538,10 +1561,9 @@ function renderCreators() {
     const videos = CREATOR_VIDEOS[cr._id]||[];
     const videoHtml = videos.map(v=>`
       <div style="display:flex;align-items:center;gap:7px;padding:7px 9px;background:var(--bg3);border-radius:var(--rs);border:1px solid var(--bd);margin-bottom:5px">
-        <input value="${v.title}" placeholder="영상 제목" onchange="updateVideoField('${cr._id}','${v.id}','title',this.value)"
-          style="flex:1;border:none;background:transparent;font-size:11.5px;color:var(--tx);outline:none;min-width:0">
-        ${v.igUrl?`<a href="${v.igUrl}" target="_blank" style="font-size:10px;padding:3px 9px;border-radius:20px;background:#c8306a;color:#fff;text-decoration:none;white-space:nowrap;font-weight:600;flex-shrink:0">📸 IG</a>`:''}
-        ${v.ttUrl?`<a href="${v.ttUrl}" target="_blank" style="font-size:10px;padding:3px 9px;border-radius:20px;background:#111;color:#fff;text-decoration:none;white-space:nowrap;font-weight:600;flex-shrink:0">🎵 TT</a>`:''}
+        <span style="flex:1;font-size:11.5px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.title||'제목없음'}</span>
+        ${v.igUrl?`<a href="${v.igUrl}" target="_blank" style="font-size:10px;padding:3px 9px;border-radius:20px;background:#c8306a;color:#fff;text-decoration:none;font-weight:600;flex-shrink:0">📸 IG</a>`:''}
+        ${v.ttUrl?`<a href="${v.ttUrl}" target="_blank" style="font-size:10px;padding:3px 9px;border-radius:20px;background:#111;color:#fff;text-decoration:none;font-weight:600;flex-shrink:0">🎵 TT</a>`:''}
         <button onclick="openVideoEdit('${cr._id}','${v.id}')" style="font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid var(--bd2);background:transparent;color:var(--tx2);cursor:pointer;flex-shrink:0">편집</button>
         <button onclick="delCreatorVideo('${v.id}','${cr._id}').then(renderCreators)" style="font-size:10px;padding:2px 5px;border-radius:5px;border:1px solid rgba(176,48,48,.2);background:transparent;color:#b03030;cursor:pointer;flex-shrink:0">×</button>
       </div>`).join('');
@@ -2371,17 +2393,29 @@ async function archiveCreators() {
 }
 
 
-// 영상 편집 (링크)
+// 영상 편집 모달
+let _editVideoCreatorId = null, _editVideoId = null;
+
 function openVideoEdit(creatorId, videoId) {
+  _editVideoCreatorId = creatorId;
+  _editVideoId = videoId;
   const v = (CREATOR_VIDEOS[creatorId]||[]).find(x=>x.id===videoId);
   if (!v) return;
-  const igUrl = prompt('📸 Instagram 링크:', v.igUrl||'');
-  if (igUrl === null) return;
-  const ttUrl = prompt('🎵 TikTok 링크:', v.ttUrl||'');
-  if (ttUrl === null) return;
-  v.igUrl = igUrl.trim();
-  v.ttUrl = ttUrl.trim();
-  saveCreatorVideo(creatorId, v).then(renderCreators);
+  document.getElementById('v-title').value = v.title||'';
+  document.getElementById('v-ig').value = v.igUrl||'';
+  document.getElementById('v-tt').value = v.ttUrl||'';
+  openOv('ov-video');
+}
+
+async function saveVideoEdit() {
+  const v = (CREATOR_VIDEOS[_editVideoCreatorId]||[]).find(x=>x.id===_editVideoId);
+  if (!v) return;
+  v.title = document.getElementById('v-title').value;
+  v.igUrl = document.getElementById('v-ig').value.trim();
+  v.ttUrl = document.getElementById('v-tt').value.trim();
+  await saveCreatorVideo(_editVideoCreatorId, v);
+  closeOv('ov-video');
+  renderCreators();
 }
 
 /* ══ REPORT INSIGHT ══ */
