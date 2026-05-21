@@ -1440,11 +1440,23 @@ function confirmMove() {
 }
 
 /* ══ CREATORS ══ */
+function findCrById(id) {
+  // 현재 달 + 아카이브에서 찾기
+  let cr = bd().creators.find(x=>x._id===id);
+  if (cr) return cr;
+  // 아카이브에서 찾기
+  for (const key of Object.keys(CREATOR_ARCHIVE_DATA)) {
+    const found = (CREATOR_ARCHIVE_DATA[key]?.creators||[]).find(x=>x._id===id);
+    if (found) return found;
+  }
+  return null;
+}
+
 function openCrModal(id) {
   S.editCrId=id;
   crThumb=null; clearCrThumb();
   document.getElementById('cr-modal-title').textContent=id?'크리에이터 편집':'크리에이터 추가';
-  const cr=id?bd().creators.find(x=>x._id===id):null;
+  const cr=id?findCrById(id):null;
   document.getElementById('c-name').value=cr?.name||'';
   document.getElementById('c-handle').value=cr?.handle||'';
   document.getElementById('c-ig').value=cr?.ig||'';
@@ -1549,6 +1561,7 @@ async function renderCreatorsArchive(month) {
       </div>
       <div style="display:flex;gap:5px;margin-top:9px;border-top:1px solid var(--bd);padding-top:7px">
         <button class="btn btn-g btn-sm" onclick="openCrModal('${cr._id}')">편집</button>
+        <button class="btn btn-d btn-sm" onclick="delCr('${cr._id}')">삭제</button>
       </div>
     </div>`;
   }).join('');
@@ -1633,7 +1646,31 @@ function renderCreators() {
     </div>`;
   }).join('');
 }
-function delCr(id){if(!confirm('삭제?'))return;D[S.brand].creators=bd().creators.filter(c=>c._id!==id);dbDel('creators',id);renderCreators();updateSB();}
+async function delCr(id) {
+  if(!confirm('삭제할까요?')) return;
+  // 현재 달에서 제거
+  D[S.brand].creators = bd().creators.filter(c=>c._id!==id);
+  // DB에서 삭제
+  await dbDel('creators', id);
+  // 아카이브에서도 제거 + 업데이트
+  for (const key of Object.keys(CREATOR_ARCHIVE_DATA)) {
+    const arch = CREATOR_ARCHIVE_DATA[key];
+    if (!arch?.creators) continue;
+    const found = arch.creators.find(x=>x._id===id);
+    if (found) {
+      arch.creators = arch.creators.filter(x=>x._id!==id);
+      // 아카이브 DB 업데이트
+      const [brand, ...monthParts] = key.split('-');
+      const month = monthParts.join('-');
+      await db.from('creator_archive').upsert(
+        { id: key, brand, month, data: arch },
+        { onConflict: 'id' }
+      );
+    }
+  }
+  renderCreators();
+  updateSB();
+}
 
 /* ══ BUDGET ══ */
 
