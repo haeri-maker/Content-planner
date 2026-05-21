@@ -2369,7 +2369,20 @@ async function loadAllCreatorVideos() {
   });
 }
 async function saveCreatorVideo(creatorId, v) {
-  await db.from('creator_videos').upsert({id:v.id,creator_id:creatorId,brand:S.brand,title:v.title,ig_url:v.igUrl,tt_url:v.ttUrl},{onConflict:'id'});
+  await db.from('creator_videos').upsert({id:v.id,creator_id:creatorId,brand:S.brand,title:v.title||'',ig_url:v.igUrl||'',tt_url:v.ttUrl||''},{onConflict:'id'});
+  // 아카이브 데이터에도 영상 업데이트
+  for (const key of Object.keys(CREATOR_ARCHIVE_DATA)) {
+    const arch = CREATOR_ARCHIVE_DATA[key];
+    if (!arch?.creators?.find(x=>x._id===creatorId)) continue;
+    if (!arch.videos) arch.videos = {};
+    arch.videos[creatorId] = CREATOR_VIDEOS[creatorId]||[];
+    const [brand,...monthParts] = key.split('-');
+    const month = monthParts.join('-');
+    await db.from('creator_archive').upsert(
+      { id: key, brand, month, data: arch },
+      { onConflict: 'id' }
+    );
+  }
 }
 async function delCreatorVideo(videoId, creatorId) {
   await db.from('creator_videos').delete().eq('id', videoId);
@@ -2382,6 +2395,13 @@ async function addCreatorVideo(creatorId) {
   if (!CREATOR_VIDEOS[creatorId]) CREATOR_VIDEOS[creatorId] = [];
   CREATOR_VIDEOS[creatorId].push(v);
   await saveCreatorVideo(creatorId, v);
+  // 편집 모달 바로 열기
+  _editVideoCreatorId = creatorId;
+  _editVideoId = v.id;
+  document.getElementById('v-title').value = '';
+  document.getElementById('v-ig').value = '';
+  document.getElementById('v-tt').value = '';
+  openOv('ov-video');
   renderCreators();
 }
 async function updateVideoField(creatorId, videoId, field, value) {
