@@ -225,8 +225,7 @@ td.tdn{color:var(--tx)}
   <div class="sb-sec">
     <div class="sb-lbl">메뉴</div>
     <button class="nav on" data-p="calendar"><div class="ndot" style="background:var(--leps)"></div>캘린더</button>
-    <button class="nav" data-p="creators"><div class="ndot" style="background:var(--cr-c)"></div>크리에이터</button>
-    <button class="nav" data-p="budget"><div class="ndot" style="background:var(--plan-c)"></div>예산</button>
+    <button class="nav" data-p="creators"><div class="ndot" style="background:var(--cr-c)"></div>크리에이터 & 예산</button>
     <button class="nav" data-p="report"><div class="ndot" style="background:var(--leps)"></div>주간 공유 리포트</button>
   </div>
   <div class="sb-budget">
@@ -268,29 +267,17 @@ td.tdn{color:var(--tx)}
 <!-- CREATORS -->
 <div class="panel" id="panel-creators">
   <div class="ph">
-    <div><div class="pt" id="cr-title">Laboreve 크리에이터</div><div class="ps">섭외 현황</div></div>
-    <button class="btn btn-p" id="btn-add-cr">+ 추가</button>
+    <div><div class="pt" id="cr-title">Laboreve 크리에이터 & 예산</div><div class="ps">섭외 현황</div></div>
+    <div class="row">
+      <button class="btn btn-g btn-sm" id="btn-archive-cr" onclick="archiveCreators()">📁 아카이브</button>
+      <button class="btn btn-p" id="btn-add-cr" onclick="openCrModal(null)">+ 크리에이터</button>
+    </div>
   </div>
   <div class="stats" id="cr-stats"></div>
   <div class="cr-grid" id="cr-list"></div>
+
 </div>
 
-<!-- BUDGET -->
-<div class="panel" id="panel-budget">
-  <div class="ph">
-    <div><div class="pt" id="budget-title">Laboreve 예산</div><div class="ps">크리에이터 + 기타 비용</div></div>
-    <button class="btn btn-p" id="btn-add-exp">+ 비용 추가</button>
-  </div>
-  <div class="stats" id="budget-stats"></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:4px">
-    <div class="card"><div class="card-h">크리에이터 비용</div>
-      <table><thead><tr><th>이름</th><th>촬영일</th><th>비용</th><th>상태</th></tr></thead>
-      <tbody id="b-cr"></tbody></table></div>
-    <div class="card"><div class="card-h">기타 비용</div>
-      <table><thead><tr><th>항목</th><th>월</th><th>비용</th><th></th></tr></thead>
-      <tbody id="b-exp"></tbody></table></div>
-  </div>
-</div>
 
 
 <!-- REPORT -->
@@ -450,9 +437,21 @@ td.tdn{color:var(--tx)}
   <div class="modal">
     <div class="mh"><span id="cr-modal-title">크리에이터 추가</span><button class="xbtn" data-close="ov-cr">×</button></div>
     <div class="mb">
-      <div class="fg fg2">
-        <div class="field"><label>이름</label><input type="text" id="c-name"></div>
-        <div class="field"><label>핸들</label><input type="text" id="c-handle"></div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
+        <div style="position:relative;flex-shrink:0">
+          <div id="cr-thumb-wrap" style="width:72px;height:72px;border-radius:50%;overflow:hidden;background:var(--bg3);border:2px solid var(--bd);display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="document.getElementById('cr-thumb-file').click()">
+            <img id="cr-thumb-img" style="width:100%;height:100%;object-fit:cover;display:none">
+            <span id="cr-thumb-hint" style="font-size:22px">👤</span>
+          </div>
+          <input type="file" id="cr-thumb-file" accept="image/*" style="display:none" onchange="handleCrThumbFile(this)">
+          <button id="cr-thumb-clear" onclick="clearCrThumb()" style="display:none;position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:#e24b4a;border:none;color:#fff;font-size:11px;cursor:pointer;line-height:1">×</button>
+        </div>
+        <div style="flex:1">
+          <div class="fg fg2" style="margin-bottom:0">
+            <div class="field"><label>이름</label><input type="text" id="c-name"></div>
+            <div class="field"><label>핸들</label><input type="text" id="c-handle"></div>
+          </div>
+        </div>
       </div>
       <div class="fg fg2">
         <div class="field"><label>📸 Instagram URL</label><input type="url" id="c-ig" placeholder="https://instagram.com/..."></div>
@@ -466,6 +465,11 @@ td.tdn{color:var(--tx)}
         <div class="field"><label>비용 (₩)</label><input type="number" id="c-fee" min="0"></div>
       </div>
       <div class="fg fg1"><div class="field"><label>콘텐츠 유형</label><input type="text" id="c-content"></div></div>
+      <div class="fg fg1"><div class="field"><label>💳 계좌 정보</label><input type="text" id="c-account" placeholder="은행명 계좌번호 예금주"></div></div>
+      <div class="fg fg2">
+        <div class="field"><label>📋 기획안 링크</label><input type="url" id="c-brief" placeholder="https://drive.google.com/..."></div>
+        <div class="field"><label>🔗 프로필/바로가기 링크</label><input type="url" id="c-profile" placeholder="https://..."></div>
+      </div>
       <div class="fg fg1"><div class="field"><label>메모</label><textarea id="c-memo"></textarea></div></div>
     </div>
     <div class="mf">
@@ -491,6 +495,74 @@ td.tdn{color:var(--tx)}
     <div class="mf">
       <button class="btn btn-g" data-close="ov-exp">취소</button>
       <button class="btn btn-p" id="save-exp-btn">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- UGC modal -->
+<div class="ov" id="ov-ugc">
+  <div class="modal modal-lg">
+    <div class="mh"><span id="ugc-modal-title">UGC 추가</span><button class="xbtn" data-close="ov-ugc">×</button></div>
+    <div class="mb">
+      <div class="fg fg2">
+        <div class="field"><label>파일명</label><input type="text" id="u-handle" placeholder="예: NRGW_UGC_001"></div>
+        <div class="field"><label>수급일</label><input type="date" id="u-date"></div>
+      </div>
+      <div class="fg fg2">
+        <div class="field"><label>제품명</label><textarea id="u-product" placeholder="예: PDRN 토너&#10;비타민 세럼" style="min-height:44px;resize:vertical"></textarea></div>
+        <div class="field"><label>퀄리티</label>
+          <div style="display:flex;gap:3px;margin-top:5px;align-items:center" id="u-quality-wrap">
+            <button type="button" onclick="setUGCQuality(1)" class="q-btn" data-q="1" style="font-size:22px;background:none;border:none;cursor:pointer;line-height:1;padding:0 1px;color:var(--bd2);transition:color .1s">★</button>
+            <button type="button" onclick="setUGCQuality(2)" class="q-btn" data-q="2" style="font-size:22px;background:none;border:none;cursor:pointer;line-height:1;padding:0 1px;color:var(--bd2);transition:color .1s">★</button>
+            <button type="button" onclick="setUGCQuality(3)" class="q-btn" data-q="3" style="font-size:22px;background:none;border:none;cursor:pointer;line-height:1;padding:0 1px;color:var(--bd2);transition:color .1s">★</button>
+            <button type="button" onclick="setUGCQuality(4)" class="q-btn" data-q="4" style="font-size:22px;background:none;border:none;cursor:pointer;line-height:1;padding:0 1px;color:var(--bd2);transition:color .1s">★</button>
+            <button type="button" onclick="setUGCQuality(5)" class="q-btn" data-q="5" style="font-size:22px;background:none;border:none;cursor:pointer;line-height:1;padding:0 1px;color:var(--bd2);transition:color .1s">★</button>
+            <span id="u-quality-label" style="font-size:11px;color:var(--tx3);margin-left:6px"></span>
+          </div>
+          <input type="hidden" id="u-quality" value="3">
+        </div>
+      </div>
+      <div class="fg fg1"><div class="field"><label>소셜 업로드 채널 (중복 선택 가능)</label>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:5px" id="u-channels-wrap"></div>
+      </div></div>
+      <div class="fg fg1"><div class="field"><label>콘텐츠 유형 태그</label>
+        <div id="u-type-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"></div>
+        <div style="display:flex;gap:6px;margin-top:7px">
+          <input type="text" id="u-type-input" placeholder="태그 직접 입력" style="flex:1;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);padding:5px 9px;font-size:12px;color:var(--tx)">
+          <button class="btn btn-g btn-sm" onclick="addUGCTag()">추가</button>
+        </div>
+      </div></div>
+      <div class="fg fg1" id="u-bundle-wrap" style="display:none"><div class="field"><label>Bundle (Nuriglow 전용)</label><input type="text" id="u-bundle" placeholder="예: Glow Bundle A"></div></div>
+      <div class="fg fg1"><div class="field"><label>드라이브 링크</label><input type="url" id="u-drive" placeholder="https://drive.google.com/..."></div></div>
+      <div class="fg fg1"><div class="field"><label>활용 현황</label>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:5px;padding:8px 10px;background:var(--bg3);border-radius:var(--rs);border:1px solid var(--bd)">
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="u-used-ig" style="accent-color:var(--a)"> 📸 IG</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="u-used-tt" style="accent-color:var(--a)"> 🎵 TT</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="u-used-ad" style="accent-color:var(--a)"> 📢 광고</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="u-used-shopee" style="accent-color:var(--a)"> 🛒 Shopee</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;white-space:nowrap"><input type="checkbox" id="u-used-web" style="accent-color:var(--a)"> 🌐 nuriglow.com</label>
+        </div>
+      </div></div>
+      <div class="fg fg1"><div class="field"><label>메모</label><textarea id="u-memo" style="min-height:52px"></textarea></div></div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:10.5px;color:var(--tx2);font-weight:500;margin-bottom:5px">썸네일</div>
+        <div class="pz" id="ugc-pz" tabindex="0">
+          <img id="ugc-pz-img" class="pz-img" style="display:none">
+          <div id="ugc-pz-hint"><div style="font-size:18px;margin-bottom:5px">📋</div>
+            <div style="font-size:11.5px;font-weight:500;color:var(--tx2)">캡처 후 <kbd>Ctrl+V</kbd> 붙여넣기</div>
+            <div style="font-size:10.5px;margin-top:3px">또는 클릭해서 파일 선택</div>
+          </div>
+          <div id="ugc-pz-act" style="display:none;margin-top:6px">
+            <button class="btn btn-d btn-xs" type="button" onclick="clearUGCThumb(event)">이미지 제거</button>
+          </div>
+        </div>
+        <input type="file" id="ugc-pz-file" accept="image/*" style="display:none">
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-d" id="btn-del-ugc" style="display:none;margin-right:auto" onclick="delUGC()">삭제</button>
+      <button class="btn btn-g" data-close="ov-ugc">취소</button>
+      <button class="btn btn-p" id="save-ugc-btn">저장</button>
     </div>
   </div>
 </div>
@@ -549,12 +621,12 @@ function db2s(r) {
 function c2db(c, brand) {
   return { id: c._id, brand, name: c.name, handle: c.handle, ig_url: c.ig,
     tt_url: c.tt, status: c.status, shoot_date: c.date, fee: c.fee,
-    content_type: c.content, memo: c.memo };
+    content_type: c.content, memo: c.memo, thumb: c.thumb||'', archive_month: c.archiveMonth||'', account_info: c.accountInfo||'', brief_link: c.briefLink||'', profile_link: c.profileLink||'' };
 }
 function db2c(r) {
   return { _id: r.id, name: r.name||'', handle: r.handle||'', ig: r.ig_url||'',
     tt: r.tt_url||'', status: r.status||'new', date: r.shoot_date||'',
-    fee: r.fee||0, content: r.content_type||'', memo: r.memo||'' };
+    fee: r.fee||0, content: r.content_type||'', memo: r.memo||'', thumb: r.thumb||'', archiveMonth: r.archive_month||'', accountInfo: r.account_info||'', briefLink: r.brief_link||'', profileLink: r.profile_link||'' };
 }
 function e2db(e, brand) {
   return { id: e._id, brand, name: e.name, month: e.month, amount: e.amount };
@@ -637,21 +709,25 @@ async function loadThumbsBackground() {
 }
 
 async function migrateBase64Thumbs(thumbData) {
-  for (const r of thumbData) {
-    if (!r.thumb || isStorageUrl(r.thumb)) continue; // 이미 URL이면 스킵
-    // base64 → Storage 이전
-    const url = await uploadBase64ToStorage(r.thumb);
-    if (!url) continue;
-    // DB 업데이트
-    await db.from('slots').update({ thumb: url }).eq('id', r.id);
-    // 메모리 업데이트
-    ['labo','leps','nuri'].forEach(b => {
-      const s = D[b].slots.find(x=>x._id===r.id);
-      if (s) s.thumb = url;
-    });
-    console.log('✅ 썸네일 이전 완료:', r.id);
+  const base64List = thumbData.filter(r => r.thumb && !isStorageUrl(r.thumb));
+  console.log('🔄 썸네일 이전 시작:', base64List.length, '개');
+  if (!base64List.length) { console.log('✅ 이전할 썸네일 없음 (이미 Storage)'); return; }
+  for (const r of base64List) {
+    try {
+      const url = await uploadBase64ToStorage(r.thumb);
+      if (!url) { console.warn('❌ 업로드 실패:', r.id); continue; }
+      await db.from('slots').update({ thumb: url }).eq('id', r.id);
+      ['labo','leps','nuri'].forEach(b => {
+        const s = D[b].slots.find(x=>x._id===r.id);
+        if (s) s.thumb = url;
+      });
+      console.log('✅ 썸네일 이전 완료:', r.id);
+      renderCal();
+    } catch(err) {
+      console.error('❌ 오류:', r.id, err);
+    }
   }
-  renderCal();
+  console.log('🎉 모든 썸네일 이전 완료!');
 }
 function setupRT() {
   db.channel('planner-slots')
@@ -685,6 +761,7 @@ const S = {
   slotThumb: null,
 };
 const gid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+let crThumb = null;
 const bd = () => D[S.brand];
 const ML = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 
@@ -818,9 +895,9 @@ function switchBrand(b) {
       el.classList.add('on');
     }
   });
-  ['cal-title','cr-title','budget-title'].forEach(id => {
+  ['cal-title','cr-title'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.textContent = cfg.name + ' ' + el.textContent.split(' ').slice(1).join(' ');
+    if (el) el.textContent = cfg.name + ' ' + (id==='cr-title' ? '크리에이터 & 예산' : el.textContent.split(' ').slice(1).join(' '));
   });
   renderActive();
   updateSB();
@@ -840,7 +917,8 @@ function renderActive() {
   const id = p.id.replace('panel-','');
   if (id==='calendar') renderCal();
   else if (id==='creators') renderCreators();
-  else if (id==='budget') renderBudget();
+  // budget은 creators 패널에 통합됨
+  else if (id==='ugc') { loadUGC().then(renderUGC); }
   else if (id==='report') renderReport();
 }
 
@@ -1340,28 +1418,40 @@ function confirmMove() {
 }
 
 /* ══ CREATORS ══ */
-document.getElementById('btn-add-cr').addEventListener('click', () => openCrModal(null));
 function openCrModal(id) {
   S.editCrId=id;
+  crThumb=null; clearCrThumb();
   document.getElementById('cr-modal-title').textContent=id?'크리에이터 편집':'크리에이터 추가';
-  const c=id?bd().creators.find(x=>x._id===id):null;
-  document.getElementById('c-name').value=c?.name||'';
-  document.getElementById('c-handle').value=c?.handle||'';
-  document.getElementById('c-ig').value=c?.ig||'';
-  document.getElementById('c-tt').value=c?.tt||'';
-  document.getElementById('c-status').value=c?.status||'new';
-  document.getElementById('c-date').value=c?.date||'';
-  document.getElementById('c-fee').value=c?.fee||'';
-  document.getElementById('c-content').value=c?.content||'';
-  document.getElementById('c-memo').value=c?.memo||'';
+  const cr=id?bd().creators.find(x=>x._id===id):null;
+  document.getElementById('c-name').value=cr?.name||'';
+  document.getElementById('c-handle').value=cr?.handle||'';
+  document.getElementById('c-ig').value=cr?.ig||'';
+  document.getElementById('c-tt').value=cr?.tt||'';
+  document.getElementById('c-status').value=cr?.status||'new';
+  document.getElementById('c-date').value=cr?.date||'';
+  document.getElementById('c-fee').value=cr?.fee||'';
+  document.getElementById('c-content').value=cr?.content||'';
+  document.getElementById('c-memo').value=cr?.memo||'';
+  document.getElementById('c-account').value=cr?.accountInfo||'';
+  document.getElementById('c-brief').value=cr?.briefLink||'';
+  document.getElementById('c-profile').value=cr?.profileLink||'';
+  if(cr?.thumb) applyCrThumb(cr.thumb);
   openOv('ov-cr');
 }
-document.getElementById('save-cr-btn').addEventListener('click', () => {
+document.getElementById('save-cr-btn').addEventListener('click', async () => {
+  let thumb = crThumb;
+  if (thumb && !isStorageUrl(thumb)) {
+    const url = await uploadBase64ToStorage(thumb);
+    if (url) thumb = url;
+  }
   const data={name:document.getElementById('c-name').value,handle:document.getElementById('c-handle').value,
     ig:document.getElementById('c-ig').value,tt:document.getElementById('c-tt').value,
     status:document.getElementById('c-status').value,date:document.getElementById('c-date').value,
     fee:parseInt(document.getElementById('c-fee').value)||0,content:document.getElementById('c-content').value,
-    memo:document.getElementById('c-memo').value};
+    memo:document.getElementById('c-memo').value,thumb:thumb||'',
+    accountInfo:document.getElementById('c-account').value,
+    briefLink:document.getElementById('c-brief').value,
+    profileLink:document.getElementById('c-profile').value};
   if(!data.name) return;
   let obj;
   if(S.editCrId){obj=bd().creators.find(x=>x._id===S.editCrId);if(obj)Object.assign(obj,data);}
@@ -1380,34 +1470,67 @@ function renderCreators() {
     <div class="stat"><div class="stat-v" style="color:var(--rec-c)">${crs.filter(c=>c.status==='contact').length}</div><div class="stat-l">연락중</div></div>
     <div class="stat"><div class="stat-v" style="color:var(--cr-c)">₩${tot.toLocaleString()}</div><div class="stat-l">총 비용</div></div>`;
   if(!crs.length){document.getElementById('cr-list').innerHTML='<div class="empty"><div class="empty-i">🎬</div>크리에이터를 추가해보세요</div>';return;}
-  document.getElementById('cr-list').innerHTML=crs.map(c=>`
+  document.getElementById('cr-list').innerHTML=crs.map(cr=>{
+    const videos = CREATOR_VIDEOS[cr._id]||[];
+    const videoHtml = videos.map(v=>`
+      <div style="display:flex;align-items:center;gap:7px;padding:7px 9px;background:var(--bg3);border-radius:var(--rs);border:1px solid var(--bd);margin-bottom:5px">
+        <input value="${v.title}" placeholder="영상 제목" onchange="updateVideoField('${cr._id}','${v.id}','title',this.value)"
+          style="flex:1;border:none;background:transparent;font-size:11.5px;color:var(--tx);outline:none;min-width:0">
+        ${v.igUrl?`<a href="${v.igUrl}" target="_blank" style="font-size:10px;padding:3px 9px;border-radius:20px;background:#c8306a;color:#fff;text-decoration:none;white-space:nowrap;font-weight:600;flex-shrink:0">📸 IG</a>`:''}
+        ${v.ttUrl?`<a href="${v.ttUrl}" target="_blank" style="font-size:10px;padding:3px 9px;border-radius:20px;background:#111;color:#fff;text-decoration:none;white-space:nowrap;font-weight:600;flex-shrink:0">🎵 TT</a>`:''}
+        <button onclick="openVideoEdit('${cr._id}','${v.id}')" style="font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid var(--bd2);background:transparent;color:var(--tx2);cursor:pointer;flex-shrink:0">편집</button>
+        <button onclick="delCreatorVideo('${v.id}','${cr._id}').then(renderCreators)" style="font-size:10px;padding:2px 5px;border-radius:5px;border:1px solid rgba(176,48,48,.2);background:transparent;color:#b03030;cursor:pointer;flex-shrink:0">×</button>
+      </div>`).join('');
+    return `
     <div class="cr-card">
-      <div style="display:flex;justify-content:space-between;margin-bottom:7px">
-        <div><div style="font-size:14px;font-weight:500">${c.name}</div><div style="font-size:11px;color:var(--tx2)">${c.handle}</div></div>
-        <span class="badge ${sb[c.status]}">${sl[c.status]}</span>
+      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px">
+        <div style="width:56px;height:56px;border-radius:50%;overflow:hidden;background:var(--bg3);border:2px solid var(--bd);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          ${cr.thumb?`<img src="${cr.thumb}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:24px">👤</span>'}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+            <div><div style="font-size:14px;font-weight:600">${cr.name}</div><div style="font-size:11px;color:var(--tx2)">${cr.handle}</div></div>
+            <span class="badge ${sb[cr.status]}">${sl[cr.status]}</span>
+          </div>
+          ${cr.content?`<span class="badge" style="background:var(--a-bg);color:var(--a);border-color:var(--a-bd);display:inline-block;margin-bottom:4px">${cr.content}</span>`:''}
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px">
+            ${cr.ig?`<a href="${cr.ig}" target="_blank" style="font-size:10px;font-weight:500;color:#c8306a;text-decoration:none;padding:2px 9px;border:1px solid #e898c0;border-radius:20px;background:#faedf3">📸 IG ↗</a>`:''}
+            ${cr.tt?`<a href="${cr.tt}" target="_blank" style="font-size:10px;font-weight:500;color:#111;text-decoration:none;padding:2px 9px;border:1px solid #ccc;border-radius:20px;background:#f5f5f5">🎵 TT ↗</a>`:''}
+          </div>
+        </div>
       </div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px">
-        ${c.ig?`<a href="${c.ig}" target="_blank" style="font-size:10px;font-weight:500;color:#c8306a;text-decoration:none;padding:2px 9px;border:1px solid #e898c0;border-radius:20px;background:#faedf3">📸 IG ↗</a>`:'<span style="font-size:10px;color:var(--tx3);padding:2px 7px;border:1px dashed var(--bd2);border-radius:20px">IG 미등록</span>'}
-        ${c.tt?`<a href="${c.tt}" target="_blank" style="font-size:10px;font-weight:500;color:#111;text-decoration:none;padding:2px 9px;border:1px solid #ccc;border-radius:20px;background:#f5f5f5">🎵 TT ↗</a>`:'<span style="font-size:10px;color:var(--tx3);padding:2px 7px;border:1px dashed var(--bd2);border-radius:20px">TT 미등록</span>'}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:12px;font-weight:500;color:var(--cr-c);font-family:'DM Mono',monospace">${cr.fee?'₩'+cr.fee.toLocaleString():'비용 미정'}</div>
+        ${cr.date?`<div style="font-size:11px;color:var(--tx2)">📅 ${cr.date}</div>`:''}
       </div>
-      ${c.content?`<div style="margin-bottom:5px"><span class="badge" style="background:var(--a-bg);color:var(--a);border-color:var(--a-bd)">${c.content}</span></div>`:''}
-      ${c.date?`<div style="font-size:11px;color:var(--tx2);margin-bottom:4px">촬영: ${c.date}</div>`:''}
-      <div style="font-size:13px;font-weight:500;color:var(--cr-c);font-family:'DM Mono',monospace">${c.fee?'₩'+c.fee.toLocaleString():'미정'}</div>
-      ${c.memo?`<div style="font-size:11px;color:var(--tx3);margin-top:6px;line-height:1.5">${c.memo}</div>`:''}
-      <div style="display:flex;gap:5px;margin-top:9px">
-        <button class="btn btn-g btn-sm" onclick="openCrModal('${c._id}')">편집</button>
-        <button class="btn btn-d btn-sm" onclick="delCr('${c._id}')">삭제</button>
+      ${cr.memo?`<div style="font-size:11px;color:var(--tx3);margin-bottom:8px;line-height:1.5;padding:6px 8px;background:var(--bg3);border-radius:var(--rs)">${cr.memo}</div>`:''}
+      <div style="border-top:1px solid var(--bd);padding-top:9px">
+        <div style="font-size:10.5px;font-weight:600;color:var(--tx2);margin-bottom:6px">🎬 영상 목록 (${videos.length})</div>
+        ${videoHtml}
+        <button onclick="addCreatorVideo('${cr._id}')" style="width:100%;padding:6px;border:1.5px dashed var(--bd2);border-radius:var(--rs);background:transparent;color:var(--tx3);font-size:11px;cursor:pointer;margin-top:3px;transition:all .12s" onmouseover="this.style.borderColor='var(--a)';this.style.color='var(--a)'" onmouseout="this.style.borderColor='var(--bd2)';this.style.color='var(--tx3)'">+ 영상 추가</button>
       </div>
-    </div>`).join('');
+      <div style="display:flex;flex-direction:column;gap:5px;margin-top:9px">
+        ${cr.accountInfo?`<div style="padding:7px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);font-size:11.5px;display:flex;align-items:center;gap:6px">
+          <span style="font-size:13px">💳</span>
+          <span style="flex:1;font-family:'DM Mono',monospace;color:var(--tx)">${cr.accountInfo}</span>
+          <button onclick="navigator.clipboard.writeText('${cr.accountInfo}');this.textContent='✅';setTimeout(()=>this.textContent='복사',1500)" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid var(--bd2);background:transparent;color:var(--tx2);cursor:pointer">복사</button>
+        </div>`:''}
+        <div style="display:flex;gap:5px">
+          ${cr.briefLink?`<a href="${cr.briefLink}" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px;background:var(--plan-bg);color:var(--plan-c);border:1px solid var(--plan-bd);border-radius:var(--rs);font-size:11px;font-weight:600;text-decoration:none">📋 기획안</a>`:''}
+          ${cr.profileLink?`<a href="${cr.profileLink}" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px;background:var(--a-bg);color:var(--a);border:1px solid var(--a-bd);border-radius:var(--rs);font-size:11px;font-weight:600;text-decoration:none">🔗 바로가기</a>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;margin-top:7px;border-top:1px solid var(--bd);padding-top:7px">
+        <button class="btn btn-g btn-sm" onclick="openCrModal('${cr._id}')">편집</button>
+        <button class="btn btn-d btn-sm" onclick="delCr('${cr._id}')">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 function delCr(id){if(!confirm('삭제?'))return;D[S.brand].creators=bd().creators.filter(c=>c._id!==id);dbDel('creators',id);renderCreators();updateSB();}
 
 /* ══ BUDGET ══ */
-document.getElementById('btn-add-exp').addEventListener('click', () => {
-  ['e-name','e-amount'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('e-month').value='5월';
-  openOv('ov-exp');
-});
+
 document.getElementById('save-exp-btn').addEventListener('click', () => {
   const name=document.getElementById('e-name').value,month=document.getElementById('e-month').value,amount=parseInt(document.getElementById('e-amount').value)||0;
   if(!name) return;
@@ -1455,6 +1578,8 @@ function updateSB() {
   renderLeg();
   switchBrand('nuri');
   await loadDB();
+  await loadUGC();
+  await loadAllCreatorVideos();
   switchBrand('nuri');
   setupRT();
 })();
@@ -1601,30 +1726,38 @@ async function renderReport() {
         <div id="thumbbox-${reportOffset}" style="min-height:90px;"></div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-h" style="font-size:13px">📊 지표 비교</div>
-      <div class="tbl-wrap" style="padding:4px 0">
-        <table style="table-layout:fixed;width:100%">
-          <colgroup>
-            <col style="width:28%">
-            <col style="width:24%">
-            <col style="width:24%">
-            <col style="width:24%">
-          </colgroup>
-          <thead><tr>
-            <th style="font-size:11px;padding:10px 12px">지표</th>
-            <th style="text-align:center;font-size:11px;padding:10px 10px">${fmt(prevW.start)} – ${fmt(prevW.end)}</th>
-            <th style="text-align:center;font-size:11px;padding:10px 10px">증감률</th>
-            <th style="text-align:center;font-size:11px;padding:10px 10px">${fmt(curW.start)} – ${fmt(curW.end)}</th>
-          </tr></thead>
-          <tbody>${metricRows}</tbody>
-        </table>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="card">
+        <div class="card-h" style="font-size:13px">📊 지표 비교</div>
+        <div class="tbl-wrap" style="padding:4px 0">
+          <table style="table-layout:fixed;width:100%">
+            <colgroup><col style="width:32%"><col style="width:22%"><col style="width:22%"><col style="width:24%"></colgroup>
+            <thead><tr>
+              <th style="font-size:11px;padding:10px 12px">지표</th>
+              <th style="text-align:center;font-size:11px;padding:10px 8px">${fmt(prevW.start)} – ${fmt(prevW.end)}</th>
+              <th style="text-align:center;font-size:11px;padding:10px 8px">증감률</th>
+              <th style="text-align:center;font-size:11px;padding:10px 8px">${fmt(curW.start)} – ${fmt(curW.end)}</th>
+            </tr></thead>
+            <tbody>${metricRows}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h" style="font-size:13px">💡 인사이트</div>
+        <div style="padding:12px">
+          <textarea id="report-insight"
+            placeholder="이번 주 인사이트를 입력하세요...&#10;&#10;예) 조회수 전주 대비 20% 상승. 스킨케어 루틴 영상 저장률 높음."
+            style="width:100%;min-height:200px;resize:vertical;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);color:var(--tx);font-family:'DM Sans',sans-serif;font-size:12.5px;padding:10px;outline:none;line-height:1.6"
+            oninput="saveInsight(this.value)"></textarea>
+          <div style="margin-top:7px;font-size:10px;color:var(--tx3)">💾 자동 저장 · 다음 주로 넘기면 아카이브에 보관</div>
+        </div>
       </div>
     </div>`;
 
   // 썸네일 박스 렌더
   renderThumbBox(brand, reportOffset-1, `thumbbox-${reportOffset-1}`);
   renderThumbBox(brand, reportOffset,   `thumbbox-${reportOffset}`);
+  renderInsight();
 
   // 지표 입력 이벤트
   document.querySelectorAll('.rep-input').forEach(inp => {
@@ -1696,14 +1829,481 @@ function renderReportArchive(brand) {
   }).join('');
 }
 
-document.getElementById('btn-report-prev').addEventListener('click', async ()=>{ reportOffset--; await renderReport(); });
-document.getElementById('btn-report-next').addEventListener('click', async ()=>{ if(reportOffset<0){reportOffset++; await renderReport();} });
+document.getElementById('btn-report-prev').addEventListener('click', async ()=>{
+  // 현재 인사이트 저장
+  const insightEl = document.getElementById('report-insight');
+  if (insightEl?.value) await saveInsight(insightEl.value);
+  reportOffset--;
+  await renderReport();
+});
+document.getElementById('btn-report-next').addEventListener('click', async ()=>{
+  if(reportOffset<0){
+    const insightEl = document.getElementById('report-insight');
+    if (insightEl?.value) await saveInsight(insightEl.value);
+    reportOffset++;
+    await renderReport();
+  }
+});
 document.getElementById('btn-save-report').addEventListener('click', ()=>{
   // 현재 보고 있는 offset 아카이브 저장 (현재 데이터는 이미 localStorage에 있음)
   alert('저장되었어요! 아래 아카이브에서 확인하세요 ✅');
   renderReportArchive(S.brand);
 });
 
+
+/* ══ UGC ══ */
+const UGC_DEFAULT_TAGS = ['클린본', '시딩클린본', '오리지널'];
+const UGC_CHANNELS = ['NRGW IG','NRGW TT','Labo IG','Labo TT','LEPS IG','LEPS TT','Tiktok shop'];
+const CHANNEL_COLORS = {
+  'NRGW IG':'#c8306a','NRGW TT':'#0a7050',
+  'Labo IG':'#c8306a','Labo TT':'#0a7050',
+  'LEPS IG':'#5030b8','LEPS TT':'#5030b8',
+  'Tiktok shop':'#c44d10'
+};
+let ugcQuality = 3;
+let ugcChannelSel = [];
+
+function setUGCQuality(n) {
+  ugcQuality = n;
+  const labels = ['','별로','보통','좋음','훌륭함','최고!'];
+  document.querySelectorAll('.q-btn').forEach(btn => {
+    const q = parseInt(btn.dataset.q);
+    btn.style.color = q <= n ? '#f5a623' : 'var(--bd2)';
+    btn.style.textShadow = q <= n ? '0 0 6px rgba(245,166,35,.3)' : 'none';
+  });
+  const lbl = document.getElementById('u-quality-label');
+  if (lbl) lbl.textContent = labels[n]||'';
+  document.getElementById('u-quality').value = n;
+}
+
+function renderChannelPicker() {
+  const wrap = document.getElementById('u-channels-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = UGC_CHANNELS.map(ch => {
+    const on = ugcChannelSel.includes(ch);
+    const col = CHANNEL_COLORS[ch]||'var(--a)';
+    return `<button type="button" onclick="toggleUGCChannel('${ch}')"
+      style="padding:4px 11px;border-radius:20px;font-size:11px;cursor:pointer;font-weight:500;
+      border:1.5px solid ${on?col:'var(--bd2)'};
+      background:${on?col+'22':'transparent'};
+      color:${on?col:'var(--tx2)'}">${ch}</button>`;
+  }).join('');
+}
+function toggleUGCChannel(ch) {
+  if (ugcChannelSel.includes(ch)) ugcChannelSel = ugcChannelSel.filter(x=>x!==ch);
+  else ugcChannelSel.push(ch);
+  renderChannelPicker();
+  updateBundleVisibility();
+}
+let UGC_TAGS = JSON.parse(localStorage.getItem('ugc-tags')||'null') || [...UGC_DEFAULT_TAGS];
+let ugcEditId = null;
+let ugcThumb = null;
+let ugcTypeSel = [];
+
+// DB 변환
+function ugc2db(u) {
+  return {
+    id: u._id, brand: JSON.stringify(u.channels||[]),
+    handle: u.handle||'', content_type: JSON.stringify(u.types||[]),
+    quality: u.quality||'⭐', drive_link: u.drive||'',
+    thumb: u.thumb||'', used_account: JSON.stringify(u.used||{}),
+    memo: u.memo||'', created_at: u.date||new Date().toISOString().slice(0,10),
+    product: u.product||'', bundle: u.bundle||''
+  };
+}
+function db2ugc(r) {
+  return {
+    _id: r.id, channels: safeJSON(r.brand)||[],
+    handle: r.handle||'', types: safeJSON(r.content_type)||[],
+    quality: r.quality||'⭐', drive: r.drive_link||'',
+    thumb: r.thumb||'', used: safeJSON(r.used_account)||{},
+    memo: r.memo||'', date: r.created_at||'',
+    product: r.product||'', bundle: r.bundle||''
+  };
+}
+
+// UGC 데이터 (브랜드별)
+const UGC = { labo:[], leps:[], nuri:[] };
+
+async function loadUGC() {
+  const { data, error } = await db.from('ugc_clips').select('*');
+  if (error) { console.error('UGC load error:', error); return; }
+  UGC.labo = []; UGC.leps = []; UGC.nuri = [];
+  (data||[]).forEach(r => {
+    const u = db2ugc(r);
+    const brands = u.brands.length ? u.brands : [S.brand];
+    brands.forEach(b => { if(UGC[b]) UGC[b].push(u); });
+  });
+}
+
+async function saveUGC(u) {
+  const row = ugc2db(u);
+  const { error } = await db.from('ugc_clips').upsert(row, { onConflict: 'id' });
+  if (error) { alert('❌ UGC 저장 실패\n'+error.message); return false; }
+  return true;
+}
+async function delUGCById(id) {
+  await db.from('ugc_clips').delete().eq('id', id);
+}
+
+// 태그 관련
+function saveUGCTags() { localStorage.setItem('ugc-tags', JSON.stringify(UGC_TAGS)); }
+function addUGCTag() {
+  const inp = document.getElementById('u-type-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  if (!UGC_TAGS.includes(val)) { UGC_TAGS.push(val); saveUGCTags(); }
+  if (!ugcTypeSel.includes(val)) ugcTypeSel.push(val);
+  inp.value = '';
+  renderUGCTagPicker();
+}
+
+function renderUGCTagPicker() {
+  const wrap = document.getElementById('u-type-tags');
+  if (!wrap) return;
+  wrap.innerHTML = UGC_TAGS.map(t => {
+    const on = ugcTypeSel.includes(t);
+    return `<div style="display:flex;align-items:center;gap:2px">
+      <button onclick="toggleUGCTag('${t}')" style="padding:4px 10px;border-radius:20px;font-size:11px;cursor:pointer;border:1.5px solid ${on?'var(--a)':'var(--bd2)'};background:${on?'var(--a-bg)':'transparent'};color:${on?'var(--a)':'var(--tx2)'};font-weight:${on?'600':'400'}">${t}</button>
+      <button onclick="removeUGCTag('${t}')" style="width:14px;height:14px;border-radius:50%;background:#e24b4a;border:none;color:#fff;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>
+    </div>`;
+  }).join('');
+}
+function toggleUGCTag(t) {
+  if (ugcTypeSel.includes(t)) ugcTypeSel = ugcTypeSel.filter(x=>x!==t);
+  else ugcTypeSel.push(t);
+  renderUGCTagPicker();
+}
+function removeUGCTag(t) {
+  if (!confirm("'"+t+"' 태그를 삭제할까요?")) return;
+  UGC_TAGS = UGC_TAGS.filter(x=>x!==t);
+  ugcTypeSel = ugcTypeSel.filter(x=>x!==t);
+  saveUGCTags(); renderUGCTagPicker();
+}
+
+// 썸네일
+function applyUGCThumb(data) {
+  ugcThumb = data;
+  const img = document.getElementById('ugc-pz-img');
+  img.src = data; img.style.display = 'block';
+  document.getElementById('ugc-pz-hint').style.display = 'none';
+  document.getElementById('ugc-pz-act').style.display = '';
+}
+function clearUGCThumb(e) {
+  if(e) e.stopPropagation();
+  ugcThumb = null;
+  document.getElementById('ugc-pz-img').style.display = 'none';
+  document.getElementById('ugc-pz-hint').style.display = '';
+  document.getElementById('ugc-pz-act').style.display = 'none';
+}
+
+// 브랜드 토글에 따라 bundle 필드 표시
+function updateBundleVisibility() {
+  const nuriOn = ugcChannelSel.some(ch=>ch.toLowerCase().includes('nrgw')||ch.toLowerCase().includes('nuriglow'));
+  const wrap = document.getElementById('u-bundle-wrap');
+  if (wrap) wrap.style.display = nuriOn ? '' : 'none';
+}
+
+// 모달 열기
+function openUGCModal(id) {
+  ugcEditId = id; ugcThumb = null; ugcTypeSel = []; ugcChannelSel = []; ugcQuality = 3;
+  clearUGCThumb();
+  const u = id ? (UGC.labo.find(x=>x._id===id)||UGC.leps.find(x=>x._id===id)||UGC.nuri.find(x=>x._id===id)) : null;
+  document.getElementById('ugc-modal-title').textContent = id ? 'UGC 편집' : 'UGC 추가';
+  document.getElementById('btn-del-ugc').style.display = id ? '' : 'none';
+  document.getElementById('u-handle').value = u?.handle||'';
+  document.getElementById('u-date').value = u?.date||'';
+  document.getElementById('u-product').value = u?.product||'';
+  document.getElementById('u-bundle').value = u?.bundle||'';
+  document.getElementById('u-drive').value = u?.drive||'';
+  document.getElementById('u-memo').value = u?.memo||'';
+  // 퀄리티 동그라미
+  ugcQuality = u ? (parseInt(u.quality)||3) : 3;
+  setUGCQuality(ugcQuality);
+  // 채널 선택
+  ugcChannelSel = u ? [...(u.channels||[])] : [];
+  renderChannelPicker();
+  // bundle 표시
+  updateBundleVisibility();
+  // 활용 현황
+  const used = u?.used||{};
+  document.getElementById('u-used-ig').checked = !!used.ig;
+  document.getElementById('u-used-tt').checked = !!used.tt;
+  document.getElementById('u-used-ad').checked = !!used.ad;
+  document.getElementById('u-used-shopee').checked = !!used.shopee;
+  document.getElementById('u-used-web').checked = !!used.web;
+  // 태그
+  ugcTypeSel = u ? [...(u.types||[])] : [];
+  renderUGCTagPicker();
+  // 썸네일
+  if (u?.thumb) applyUGCThumb(u.thumb);
+  openOv('ov-ugc');
+}
+
+// 저장
+document.getElementById('save-ugc-btn').addEventListener('click', async () => {
+  if (!ugcChannelSel.length) { alert('채널을 하나 이상 선택해주세요'); return; }
+  let thumb = ugcThumb;
+  // 새 이미지면 Storage 업로드
+  if (thumb && !isStorageUrl(thumb)) {
+    const url = await uploadBase64ToStorage(thumb);
+    if (url) thumb = url;
+  }
+  const u = {
+    _id: ugcEditId || gid(),
+    channels: ugcChannelSel,
+    brands: [...new Set(ugcChannelSel.map(ch => ch.toLowerCase().includes('nrgw')||ch.toLowerCase().includes('nuriglow') ? 'nuri' : ch.toLowerCase().includes('labo') ? 'labo' : ch.toLowerCase().includes('leps') ? 'leps' : S.brand))],
+    handle: document.getElementById('u-handle').value,
+    date: document.getElementById('u-date').value,
+    product: document.getElementById('u-product').value,
+    quality: String(ugcQuality),
+    bundle: document.getElementById('u-bundle').value,
+    drive: document.getElementById('u-drive').value,
+    memo: document.getElementById('u-memo').value,
+    types: ugcTypeSel,
+    used: {
+      ig: document.getElementById('u-used-ig').checked,
+      tt: document.getElementById('u-used-tt').checked,
+      ad: document.getElementById('u-used-ad').checked,
+      shopee: document.getElementById('u-used-shopee').checked,
+      web: document.getElementById('u-used-web').checked,
+    },
+    thumb: thumb||'',
+  };
+  const ok = await saveUGC(u);
+  if (!ok) return;
+  // 메모리 업데이트
+  ['labo','leps','nuri'].forEach(b => { UGC[b] = UGC[b].filter(x=>x._id!==u._id); });
+  (u.brands||[u.brands||S.brand]).forEach(b => { if(UGC[b]) UGC[b].push(u); });
+  closeOv('ov-ugc'); renderUGC();
+});
+
+// 삭제
+async function delUGC() {
+  if (!confirm('삭제할까요?')) return;
+  await delUGCById(ugcEditId);
+  ['labo','leps','nuri'].forEach(b => { UGC[b] = UGC[b].filter(x=>x._id!==ugcEditId); });
+  closeOv('ov-ugc'); renderUGC();
+}
+
+// 렌더링
+function renderUGC() {
+  const brand = S.brand;
+  const filterType = document.getElementById('ugc-filter-type')?.value||'';
+  document.getElementById('ugc-title').textContent = {labo:'Laboreve',leps:'LEPS',nuri:'Nuriglow'}[brand]+' UGC 라이브러리';
+
+  // 필터 드롭다운 업데이트
+  const sel = document.getElementById('ugc-filter-type');
+  if (sel) {
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">전체 유형</option>' + UGC_TAGS.map(t=>`<option value="${t}" ${t===cur?'selected':''}>${t}</option>`).join('');
+  }
+
+  let list = UGC[brand]||[];
+  if (filterType) list = list.filter(u => u.types.includes(filterType));
+  document.getElementById('ugc-count').textContent = list.length+'개';
+
+  const BRAND_COLORS = {nuri:'#0a7050',leps:'#5030b8',labo:'#c8306a'};
+  const BRAND_NAMES  = {nuri:'Nuriglow',leps:'LEPS',labo:'Laboreve'};
+
+  if (!list.length) {
+    document.getElementById('ugc-grid').innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-i">🎬</div>UGC를 추가해보세요</div>';
+    return;
+  }
+
+  document.getElementById('ugc-grid').innerHTML = list.map(u => {
+    const q = parseInt(u.quality||3);
+    const stars = [1,2,3,4,5].map(n=>`<span style="font-size:13px;color:${n<=q?'#f5a623':'#ddd'}">★</span>`).join('');
+    const channelTags = (u.channels||[]).map(ch=>{
+      const col=CHANNEL_COLORS[ch]||'var(--a)';
+      return `<span style="font-size:9.5px;padding:2px 8px;border-radius:10px;background:${col}18;color:${col};border:0.5px solid ${col}55;font-weight:600">${ch}</span>`;
+    }).join('');
+    const typeTags = (u.types||[]).map(t=>`<span style="font-size:9.5px;padding:2px 8px;border-radius:10px;background:var(--bg4);color:var(--tx2);border:0.5px solid var(--bd2)">${t}</span>`).join('');
+    const used = u.used||{};
+    const usedList = [
+      used.ig?'📸 IG':'', used.tt?'🎵 TT':'', used.ad?'📢 광고':'',
+      used.shopee?'🛒 Shopee':'', used.web?'🌐 Web':''
+    ].filter(Boolean);
+    const usedStr = usedList.length ? usedList.join(' · ') : '';
+    const productLines = (u.product||'').split('\n').filter(Boolean);
+
+    return `<div class="card" style="cursor:pointer;transition:border-color .15s;overflow:hidden" onclick="openUGCModal('${u._id}')">
+      <div style="position:relative">
+        ${u.thumb ? `<img src="${u.thumb}" style="width:100%;aspect-ratio:4/5;object-fit:cover;display:block;max-height:180px">
+          <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);border-radius:8px;padding:3px 7px;font-size:11px">${stars}</div>` :
+          `<div style="height:80px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px">🎬</div>`}
+      </div>
+      <div style="padding:11px 13px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <div style="font-size:13px;font-weight:600;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%">${u.handle||'파일명 없음'}</div>
+          ${!u.thumb?`<div>${stars}</div>`:''}
+        </div>
+        ${u.date?`<div style="font-size:10px;color:var(--tx3);margin-bottom:6px">📅 ${u.date}</div>`:''}
+        ${channelTags?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:7px">${channelTags}</div>`:''}
+        ${productLines.length?`<div style="font-size:11px;color:var(--tx2);margin-bottom:6px;line-height:1.5">📦 ${productLines.join('<br>')}</div>`:''}
+        ${u.bundle?`<div style="font-size:11px;color:var(--nuri);margin-bottom:6px;font-weight:500">🎁 ${u.bundle}</div>`:''}
+        ${typeTags?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">${typeTags}</div>`:''}
+        ${usedStr?`<div style="font-size:10px;color:var(--tx3);margin-bottom:6px">${used.tt?'<span style="color:#e24b4a;font-weight:600">⚠️ TT사용</span> · ':''} ${usedStr}</div>`:''}
+        ${u.memo?`<div style="font-size:10.5px;color:var(--tx3);margin-bottom:8px;line-height:1.5;border-top:1px solid var(--bd);padding-top:6px">${u.memo}</div>`:''}
+        <div onclick="event.stopPropagation()">
+          ${u.drive?`<a href="${u.drive}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:5px;padding:6px;background:var(--a);color:#fff;border-radius:var(--rs);font-size:11.5px;font-weight:600;text-decoration:none;width:100%">📁 드라이브 바로가기</a>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// 썸네일 파일 업로드 설정
+(function setupUGCPZ() {
+  const pz = document.getElementById('ugc-pz');
+  const fi = document.getElementById('ugc-pz-file');
+  if (!pz || !fi) return;
+  pz.addEventListener('click', e => { if(e.target.tagName==='BUTTON') return; fi.click(); });
+  fi.addEventListener('change', async e => {
+    const f=e.target.files[0]; if(!f) return;
+    applyUGCThumb(await readFile(f));
+    fi.value='';
+  });
+  pz.addEventListener('dragover', e => { e.preventDefault(); });
+  pz.addEventListener('drop', async e => {
+    e.preventDefault();
+    const f=e.dataTransfer.files[0];
+    if(f&&f.type.startsWith('image/')) applyUGCThumb(await readFile(f));
+  });
+})();
+
+
+
+// 붙여넣기 이벤트 (UGC 모달 열려있을 때)
+document.addEventListener('paste', async e => {
+  if (!document.getElementById('ov-ugc').classList.contains('on')) return;
+  const img = Array.from(e.clipboardData?.items||[]).find(i=>i.type.startsWith('image/'));
+  if (img) applyUGCThumb(await readFile(img.getAsFile()));
+}, true);
+
+// 버튼 이벤트
+
+
+/* ══ CREATOR VIDEOS & THUMB ══ */
+const CREATOR_VIDEOS = {}; // { creatorId: [{id,title,igUrl,ttUrl}] }
+
+async function handleCrThumbFile(input) {
+  const f = input.files[0]; if(!f) return;
+  const base64 = await readFile(f);
+  applyCrThumb(base64);
+  const url = await uploadThumbToStorage(f);
+  if (url) crThumb = url;
+  input.value = '';
+}
+function clearCrThumb() {
+  crThumb = null;
+  document.getElementById('cr-thumb-img').style.display = 'none';
+  document.getElementById('cr-thumb-img').src = '';
+  document.getElementById('cr-thumb-hint').style.display = '';
+  document.getElementById('cr-thumb-clear').style.display = 'none';
+}
+function applyCrThumb(data) {
+  crThumb = data;
+  const img = document.getElementById('cr-thumb-img');
+  img.src = data; img.style.display = 'block';
+  document.getElementById('cr-thumb-hint').style.display = 'none';
+  document.getElementById('cr-thumb-clear').style.display = '';
+}
+// cr-thumb-file은 HTML에서 직접 처리
+
+// 영상 로드
+async function loadCreatorVideos(creatorId) {
+  const { data } = await db.from('creator_videos').select('*').eq('creator_id', creatorId);
+  CREATOR_VIDEOS[creatorId] = (data||[]).map(r=>({id:r.id,title:r.title||'',igUrl:r.ig_url||'',ttUrl:r.tt_url||'',date:r.created_at||''}));
+}
+async function loadAllCreatorVideos() {
+  const { data } = await db.from('creator_videos').select('*');
+  (data||[]).forEach(r => {
+    if (!CREATOR_VIDEOS[r.creator_id]) CREATOR_VIDEOS[r.creator_id] = [];
+    CREATOR_VIDEOS[r.creator_id].push({id:r.id,title:r.title||'',igUrl:r.ig_url||'',ttUrl:r.tt_url||'',date:r.created_at||''});
+  });
+}
+async function saveCreatorVideo(creatorId, v) {
+  await db.from('creator_videos').upsert({id:v.id,creator_id:creatorId,brand:S.brand,title:v.title,ig_url:v.igUrl,tt_url:v.ttUrl},{onConflict:'id'});
+}
+async function delCreatorVideo(videoId, creatorId) {
+  await db.from('creator_videos').delete().eq('id', videoId);
+  if (CREATOR_VIDEOS[creatorId]) CREATOR_VIDEOS[creatorId] = CREATOR_VIDEOS[creatorId].filter(v=>v.id!==videoId);
+}
+
+// 영상 추가 인라인
+async function addCreatorVideo(creatorId) {
+  const v = { id: gid(), title:'', igUrl:'', ttUrl:'', date: new Date().toISOString().slice(0,10) };
+  if (!CREATOR_VIDEOS[creatorId]) CREATOR_VIDEOS[creatorId] = [];
+  CREATOR_VIDEOS[creatorId].push(v);
+  await saveCreatorVideo(creatorId, v);
+  renderCreators();
+}
+async function updateVideoField(creatorId, videoId, field, value) {
+  const v = (CREATOR_VIDEOS[creatorId]||[]).find(x=>x.id===videoId);
+  if (v) { v[field]=value; await saveCreatorVideo(creatorId, v); }
+}
+
+// 아카이브
+async function archiveCreators() {
+  const month = new Date().toISOString().slice(0,7);
+  if (!confirm(month+' 크리에이터 아카이브하고 리셋할까요?\n기존 데이터는 아카이브에 보관됩니다.')) return;
+  const crs = bd().creators;
+  const videos = {};
+  crs.forEach(c => { videos[c._id] = CREATOR_VIDEOS[c._id]||[]; });
+  const archiveData = { creators: crs, videos };
+  await db.from('creator_archive').upsert({ id: S.brand+'-'+month, brand: S.brand, month, data: archiveData }, { onConflict: 'id' });
+  // 크리에이터 + 영상 삭제
+  for (const c of crs) {
+    await db.from('creator_videos').delete().eq('creator_id', c._id);
+    await dbDel('creators', c._id);
+  }
+  D[S.brand].creators = [];
+  Object.keys(CREATOR_VIDEOS).forEach(k => { delete CREATOR_VIDEOS[k]; });
+  alert('✅ 아카이브 완료!');
+  renderCreators();
+}
+
+
+
+// 영상 편집 (링크)
+function openVideoEdit(creatorId, videoId) {
+  const v = (CREATOR_VIDEOS[creatorId]||[]).find(x=>x.id===videoId);
+  if (!v) return;
+  const igUrl = prompt('📸 Instagram 링크:', v.igUrl||'');
+  if (igUrl === null) return;
+  const ttUrl = prompt('🎵 TikTok 링크:', v.ttUrl||'');
+  if (ttUrl === null) return;
+  v.igUrl = igUrl.trim();
+  v.ttUrl = ttUrl.trim();
+  saveCreatorVideo(creatorId, v).then(renderCreators);
+}
+
+/* ══ REPORT INSIGHT ══ */
+function getInsightKey(brand, offset) { return 'insight-'+brand+'-'+offset; }
+
+async function saveInsight(text) {
+  const key = getInsightKey(S.brand, reportOffset);
+  localStorage.setItem(key, text);
+  await db.from('reports').upsert({ key, data: { insight: text } }, { onConflict: 'key' });
+}
+
+async function loadInsight(brand, offset) {
+  const key = getInsightKey(brand, offset);
+  // 로컬 캐시 먼저
+  const local = localStorage.getItem(key);
+  if (local !== null) return local;
+  try {
+    const { data } = await db.from('reports').select('data').eq('key', key).single();
+    return data?.data?.insight || '';
+  } catch { return ''; }
+}
+
+async function renderInsight() {
+  const el = document.getElementById('report-insight');
+  if (!el) return;
+  el.value = await loadInsight(S.brand, reportOffset);
+}
 </script>
 </body>
 </html>
