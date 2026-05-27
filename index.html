@@ -12,6 +12,7 @@
   --labo:#c8306a; --labo-bg:#faedf3; --labo-bd:#e898c0; --labo-soft:#fdf5f9;
   --leps:#5030b8; --leps-bg:#eeeafa; --leps-bd:#b8a8ef; --leps-soft:#f5f2fd;
   --nuri:#0a7050; --nuri-bg:#e8f5f1; --nuri-bd:#9dd8c8; --nuri-soft:#f0faf7;
+  --lepskr:#7030d0; --lepskr-bg:#f0eafa; --lepskr-bd:#c8a8f0; --lepskr-soft:#f7f3fe;
   --a:var(--labo); --a-bg:var(--labo-bg); --a-bd:var(--labo-bd); --a-soft:var(--labo-soft);
   --bg:#f9f5f7; --bg2:#fff; --bg3:#f4eef2; --bg4:#ecdae4;
   --bd:#eddde6; --bd2:#dfc8d4; --bd3:#c898ae;
@@ -215,6 +216,10 @@ td.tdn{color:var(--tx)}
       <button class="bb" id="bb-leps" onclick="switchBrand('leps')">
         <div class="bdot" style="background:var(--leps)"></div>LEPS
         <span class="bcnt" id="cnt-leps">0</span>
+      </button>
+      <button class="bb" id="bb-lepskr" onclick="switchBrand('lepskr')">
+        <div class="bdot" style="background:var(--lepskr)"></div>LEPS_KR
+        <span class="bcnt" id="cnt-lepskr">0</span>
       </button>
       <button class="bb" id="bb-labo" onclick="switchBrand('labo')">
         <div class="bdot" style="background:var(--labo)"></div>Laboreve
@@ -573,6 +578,31 @@ td.tdn{color:var(--tx)}
   </div>
 </div>
 
+<!-- Creator copy modal -->
+<div class="ov" id="ov-cr-copy">
+  <div class="modal" style="width:400px">
+    <div class="mh">크리에이터 복사<button class="xbtn" data-close="ov-cr-copy">×</button></div>
+    <div class="mb">
+      <div style="font-size:11.5px;color:var(--tx2);margin-bottom:12px">복사할 브랜드와 업로드일을 선택해주세요</div>
+      <div class="fg fg1"><div class="field"><label>브랜드</label>
+        <select id="copy-brand">
+          <option value="nuri">Nuriglow</option>
+          <option value="leps">LEPS</option>
+          <option value="lepskr">LEPS_KR</option>
+          <option value="labo">Laboreve</option>
+        </select>
+      </div></div>
+      <div class="fg fg1"><div class="field"><label>업로드일</label>
+        <input type="date" id="copy-date">
+      </div></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-g" data-close="ov-cr-copy">취소</button>
+      <button class="btn btn-p" onclick="confirmCrCopy()">복사</button>
+    </div>
+  </div>
+</div>
+
 <!-- Video edit modal -->
 <div class="ov" id="ov-video">
   <div class="modal" style="width:420px">
@@ -768,12 +798,14 @@ function setupRT() {
 const BRANDS = {
   labo: { name:'Laboreve', c:'#c8306a', bg:'#faedf3', bd:'#e898c0', soft:'#fdf5f9' },
   leps: { name:'LEPS',     c:'#5030b8', bg:'#eeeafa', bd:'#b8a8ef', soft:'#f5f2fd' },
-  nuri: { name:'Nuriglow', c:'#0a7050', bg:'#e8f5f1', bd:'#9dd8c8', soft:'#f0faf7' },
+  nuri:   { name:'Nuriglow',  c:'#0a7050', bg:'#e8f5f1', bd:'#9dd8c8', soft:'#f0faf7' },
+  lepskr: { name:'LEPS_KR',   c:'#7030d0', bg:'#f0eafa', bd:'#c8a8f0', soft:'#f7f3fe' },
 };
 const D = {
   labo: { slots:[], creators:[], expenses:[] },
   leps: { slots:[], creators:[], expenses:[] },
-  nuri: { slots:[], creators:[], expenses:[] },
+  nuri:   { slots:[], creators:[], expenses:[] },
+  lepskr: { slots:[], creators:[], expenses:[] },
 };
 const S = {
   brand: 'labo',
@@ -909,7 +941,7 @@ function switchBrand(b) {
   document.getElementById('brand-strip').style.background = cfg.c;
   document.querySelectorAll('.bb').forEach(el => {
     el.className = 'bb';
-    if (el.id === 'bb-'+b) el.classList.add('on-'+b);
+    if (el.id === 'bb-'+b) el.classList.add(b==='lepskr'?'on-leps':'on-'+b);
   });
   document.querySelectorAll('.nav').forEach(el => {
     if (el.classList.contains('on')) {
@@ -1561,6 +1593,7 @@ async function renderCreatorsArchive(month) {
       </div>
       <div style="display:flex;gap:5px;margin-top:9px;border-top:1px solid var(--bd);padding-top:7px">
         <button class="btn btn-g btn-sm" onclick="openCrModal('${cr._id}')">편집</button>
+        <button class="btn btn-g btn-sm" onclick="openCrCopy('${cr._id}')">복사</button>
         <button class="btn btn-d btn-sm" onclick="delCr('${cr._id}')">삭제</button>
       </div>
     </div>`;
@@ -1573,13 +1606,9 @@ function renderCreators() {
   if (monthLbl) monthLbl.textContent = getCrMonth(crMonthOffset).replace('-','년 ')+'월';
   // 이번달이 아니면 아카이브 조회
   if (crMonthOffset < 0) {
-    const addBtn = document.getElementById('btn-add-cr');
-    if (addBtn) addBtn.style.display = 'none';
     renderCreatorsArchive(getCrMonth(crMonthOffset));
     return;
   }
-  const addBtn = document.getElementById('btn-add-cr');
-  if (addBtn) addBtn.style.display = ''; // 이번달 이후는 현재 데이터 표시
   const crs=bd().creators;
   const sl={new:'미접촉',contact:'연락중',confirmed:'확정',done:'완료'};
   const sb={new:'b-gray',contact:'b-recruit',confirmed:'b-green',done:'b-green'};
@@ -1704,16 +1733,17 @@ function renderBudget() {
 function delExp(id){D[S.brand].expenses=bd().expenses.filter(e=>e._id!==id);dbDel('expenses',id);renderBudget();updateSB();}
 
 /* ══ SIDEBAR ══ */
-function brandTotal(b){return D[b].creators.reduce((s,c)=>s+(c.fee||0),0)+D[b].expenses.reduce((s,e)=>s+(e.amount||0),0);}
+function brandTotal(b){if(!D[b])return 0;return D[b].creators.reduce((s,c)=>s+(c.fee||0),0)+D[b].expenses.reduce((s,e)=>s+(e.amount||0),0);}
 function updateSB() {
-  const tots={labo:brandTotal('labo'),leps:brandTotal('leps'),nuri:brandTotal('nuri')};
+  const tots={labo:brandTotal('labo'),leps:brandTotal('leps'),nuri:brandTotal('nuri'),lepskr:brandTotal('lepskr')};
   const grand=Object.values(tots).reduce((s,v)=>s+v,0);
   document.getElementById('sb-grand').textContent='₩'+grand.toLocaleString();
   document.getElementById('sb-brand-rows').innerHTML=Object.entries(BRANDS).map(([b,cfg])=>
     `<div class="sb-br"><div class="sb-brn"><div class="bdot" style="background:${cfg.c}"></div>${cfg.name}</div><div class="sb-brv" style="color:${cfg.c}">₩${tots[b].toLocaleString()}</div></div>`
   ).join('');
-  ['labo','leps','nuri'].forEach(b=>{
-    document.getElementById('cnt-'+b).textContent=D[b].slots.filter(s=>!['plan','recruit'].includes(s.type)).length;
+  ['labo','leps','nuri','lepskr'].forEach(b=>{
+    const el=document.getElementById('cnt-'+b);
+    if(el) el.textContent=D[b].slots.filter(s=>!['plan','recruit'].includes(s.type)).length;
   });
 }
 
@@ -1726,6 +1756,7 @@ function updateSB() {
   await loadAllCreatorVideos();
   await autoArchiveIfNeeded();
   switchBrand('nuri');
+  if (!D.lepskr) D.lepskr = { slots:[], creators:[], expenses:[] };
   setupRT();
 })();
 
@@ -2525,6 +2556,52 @@ async function renderInsight() {
   if (!el) return;
   el.value = await loadInsight(S.brand, reportOffset);
 }
+
+/* ══ CREATOR COPY ══ */
+let _copyCrId = null;
+
+function openCrCopy(id) {
+  _copyCrId = id;
+  document.getElementById('copy-brand').value = S.brand;
+  document.getElementById('copy-date').value = '';
+  openOv('ov-cr-copy');
+}
+
+async function confirmCrCopy() {
+  const cr = findCrById(_copyCrId);
+  if (!cr) return;
+  const targetBrand = document.getElementById('copy-brand').value;
+  const newDate = document.getElementById('copy-date').value;
+  const newCr = {
+    ...cr,
+    _id: gid(),
+    date: newDate || cr.date,
+    archiveMonth: '',
+  };
+  // 대상 브랜드에 추가
+  if (!D[targetBrand]) D[targetBrand] = { slots:[], creators:[], expenses:[] };
+  D[targetBrand].creators.push(newCr);
+  await dbSave('creators', c2db(newCr, targetBrand));
+  closeOv('ov-cr-copy');
+  // 대상 브랜드로 전환
+  if (targetBrand !== S.brand) {
+    switchBrand(targetBrand);
+  } else {
+    renderCreators();
+  }
+  alert('✅ 복사 완료!');
+}
+
+/* ── 썸네일 Ctrl+V (크리에이터 모달) ── */
+document.addEventListener('paste', async e => {
+  if (!document.getElementById('ov-cr').classList.contains('on')) return;
+  const img = Array.from(e.clipboardData?.items||[]).find(i=>i.type.startsWith('image/'));
+  if (!img) return;
+  const base64 = await readFile(img.getAsFile());
+  applyCrThumb(base64);
+  uploadBase64ToStorage(base64).then(url => { if(url) crThumb = url; });
+}, true);
+
 </script>
 </body>
 </html>
