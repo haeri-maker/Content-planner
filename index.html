@@ -715,19 +715,20 @@ async function dbDel(table, id) {
 async function loadDB() {
   const SLOT_COLS = 'id,brand,date,type,type_custom,title,time,ref,ig_url,tt_url,ig_stats,tt_stats,content,product,shoot_location,shoot_director,shoot_creators,memo';
   // 브랜드별로 나눠서 병렬 로드 (데이터 크기 줄이기)
-  const [sL, sE, sN, cr, e, lg] = await Promise.all([
+  const [sL, sE, sN, sK, cr, e, lg] = await Promise.all([
     db.from('slots').select(SLOT_COLS).eq('brand','labo'),
     db.from('slots').select(SLOT_COLS).eq('brand','leps'),
     db.from('slots').select(SLOT_COLS).eq('brand','nuri'),
+    db.from('slots').select(SLOT_COLS).eq('brand','lepskr'),
     db.from('creators').select('*'),
     db.from('expenses').select('*'),
     db.from('legends').select('*').order('sort_order'),
   ]);
-  // 에러있어도 있는 데이터 최대한 사용
-  D['labo'].slots = (sL.data||[]).map(db2s);
-  D['leps'].slots = (sE.data||[]).map(db2s);
-  D['nuri'].slots = (sN.data||[]).map(db2s);
-  ['labo','leps','nuri'].forEach(b => {
+  D['labo'].slots   = (sL.data||[]).map(db2s);
+  D['leps'].slots   = (sE.data||[]).map(db2s);
+  D['nuri'].slots   = (sN.data||[]).map(db2s);
+  D['lepskr'].slots = (sK.data||[]).map(db2s);
+  ['labo','leps','nuri','lepskr'].forEach(b => {
     D[b].creators = (cr.data||[]).filter(r=>r.brand===b).map(db2c);
     D[b].expenses = (e.data||[]).filter(r=>r.brand===b).map(db2e);
   });
