@@ -751,8 +751,8 @@ async function loadThumbsBackground() {
   let changed = false;
   for (const r of data) {
     if (!r.thumb) continue;
-    ['labo','leps','nuri'].forEach(b => {
-      const s = D[b].slots.find(x=>x._id===r.id);
+    ['labo','leps','nuri','lepskr'].forEach(b => {
+      const s = D[b]?.slots?.find(x=>x._id===r.id);
       if (s && !s.thumb) { s.thumb = r.thumb; changed = true; }
     });
   }
@@ -788,7 +788,7 @@ function setupRT() {
       const b = p.new?.brand || p.old?.brand;
       if (!b) return;
       const { data } = await db.from('slots').select('*').eq('brand', b);
-      if (data) D[b].slots = data.map(db2s);
+      if (data) { if (!D[b]) D[b] = {slots:[],creators:[],expenses:[]}; D[b].slots = data.map(db2s); }
       if (S.brand === b) renderCal();
       updateSB();
     })
