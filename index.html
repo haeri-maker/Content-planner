@@ -1926,8 +1926,15 @@ async function loadReportData(brand, offset) {
   const key = getReportKey(brand, offset);
   try {
     const { data } = await db.from('reports').select('data').eq('key', key).single();
-    return data?.data || {};
-  } catch { return {}; }
+    if (data?.data && Object.keys(data.data).length) return data.data;
+  } catch {}
+  // 구버전 offset 기반 key도 시도
+  const oldKey = 'report-'+brand+'-offset'+offset;
+  try {
+    const { data } = await db.from('reports').select('data').eq('key', oldKey).single();
+    if (data?.data && Object.keys(data.data).length) return data.data;
+  } catch {}
+  return {};
 }
 async function saveReportData(brand, offset, data) {
   const key = getReportKey(brand, offset);
@@ -2113,9 +2120,9 @@ async function renderMetricChange() {
 }
 
 async function renderReportArchive(brand) {
-  // Supabase에서 아카이브 로드
+  // Supabase에서 아카이브 로드 (신버전 + 구버전 key 모두)
   document.getElementById('report-archive').innerHTML = '<div style="color:var(--tx3);font-size:11px;padding:8px 0">⏳ 로드 중...</div>';
-  const { data: archiveRows } = await db.from('reports').select('key,data').like('key', 'report-'+brand+'-%').order('key', {ascending:false});
+  const { data: archiveRows } = await db.from('reports').select('key,data').or('key.like.report-'+brand+'-20%,key.like.report-'+brand+'-offset%').order('key', {ascending:false});
   const curKey = getReportKey(brand, reportOffset);
   const prevKey = getReportKey(brand, reportOffset-1);
   const archiveKeys = (archiveRows||[]).filter(r => r.key !== curKey && r.key !== prevKey);
@@ -2123,7 +2130,7 @@ async function renderReportArchive(brand) {
   // 아카이브 렌더링 - 비동기 처리
   const archiveHtmlParts = await Promise.all(archiveKeys.map(async row => {
     // key에서 주 정보 추출
-    const weekId = row.key.replace('report-'+brand+'-', '');
+    const weekId = row.key.replace('report-'+brand+'-', '').replace('offset','W').replace('-','주 전');
     const curData = row.data || {};
     // 이전 주 key 계산 (현재 주 -1)
     const prevRowKey = 'report-'+brand+'-'+weekId; // 임시
