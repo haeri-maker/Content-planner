@@ -424,6 +424,7 @@ td.tdn{color:var(--tx)}
       <div class="fg fg2">
         <div class="field"><label>📸 IG 업로드 링크</label><input type="url" id="s-ref-ig" placeholder="https://instagram.com/p/..."></div>
         <div class="field"><label>🎵 TT 업로드 링크</label><input type="url" id="s-ref-tt" placeholder="https://tiktok.com/@.../video/..."></div>
+        <div class="field" id="s-yt-wrap" style="display:none"><label>▶️ YT 업로드 링크</label><input type="url" id="s-ref-yt" placeholder="https://youtube.com/..."></div>
       </div>
       <div style="margin-bottom:10px;border:1px solid var(--bd);border-radius:var(--r);overflow:hidden">
 
@@ -1717,6 +1718,7 @@ function renderCreators() {
           <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px">
             ${cr.ig?`<a href="${cr.ig}" target="_blank" style="font-size:10px;font-weight:500;color:#c8306a;text-decoration:none;padding:2px 9px;border:1px solid #e898c0;border-radius:20px;background:#faedf3">📸 IG ↗</a>`:''}
             ${cr.tt?`<a href="${cr.tt}" target="_blank" style="font-size:10px;font-weight:500;color:#111;text-decoration:none;padding:2px 9px;border:1px solid #ccc;border-radius:20px;background:#f5f5f5">🎵 TT ↗</a>`:''}
+          ${(s.yt&&S.brand==='lepskr')?`<a href="${s.yt}" target="_blank" style="font-size:10px;font-weight:500;color:#ff0000;text-decoration:none;padding:2px 9px;border:1px solid #ff000044;border-radius:20px;background:#fff0f0">▶️ YT ↗</a>`:''}
           </div>
         </div>
       </div>
