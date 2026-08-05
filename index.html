@@ -1732,14 +1732,14 @@ function renderCreators() {
   // budget 별도 패널 없음
   const monthLbl = document.getElementById('cr-month-lbl');
   if (monthLbl) monthLbl.textContent = getCrMonth(crMonthOffset).replace('-','년 ')+'월';
-  // 이번달이 아니면 아카이브 조회
-  if (crMonthOffset < 0) {
-    renderCreatorsArchive(getCrMonth(crMonthOffset));
-    return;
-  }
   // 해당 달 기준으로 필터링
   const thisMonth = getCrMonth(crMonthOffset);
   const crs = bd().creators.filter(cr => !cr.date || cr.date.slice(0,7) === thisMonth);
+  // creators에 없으면 아카이브에서 조회
+  if (!crs.length && crMonthOffset < 0) {
+    renderCreatorsArchive(thisMonth);
+    return;
+  }
   const sl={new:'미접촉',contact:'연락중',confirmed:'확정',done:'완료'};
   const sb={new:'b-gray',contact:'b-recruit',confirmed:'b-green',done:'b-green'};
   const tot=crs.reduce((s,c)=>s+(c.fee||0),0);
