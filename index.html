@@ -1651,13 +1651,11 @@ document.getElementById('save-cr-btn').addEventListener('click', async () => {
   if(!data.name) return;
   let obj;
   if(S.editCrId){
-    obj=bd().creators.find(x=>x._id===S.editCrId);
-    if(obj){ Object.assign(obj,data); }
-    else {
-      // 아카이브에서 편집 - creators에 다시 추가
-      obj={_id:S.editCrId,...data};
-      bd().creators.push(obj);
-    }
+    // 필터 없이 전체 creators에서 찾기
+    obj=bd().creators.find(x=>x._id===S.editCrId)||findCrById(S.editCrId);
+    if(obj && bd().creators.includes(obj)){ Object.assign(obj,data); }
+    else if(obj) { Object.assign(obj,data); bd().creators.push({...obj}); }
+    else { obj={_id:S.editCrId,...data}; bd().creators.push(obj); }
   } else {
     obj={_id:gid(),...data};
     bd().creators.push(obj);
