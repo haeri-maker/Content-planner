@@ -1663,17 +1663,14 @@ document.getElementById('save-cr-btn').addEventListener('click', async () => {
     bd().creators.push(obj);
   }
   if(obj) dbSave('creators',c2db(obj,S.brand));
-  // 업로드일 기준으로 월 자동 전환
+  // 업로드일 기준으로 해당 달로 이동
   const uploadDate = document.getElementById('c-date').value;
   if (uploadDate) {
-    const uploadMonth = uploadDate.slice(0,7);
     const today = new Date();
     const todayY = today.getFullYear();
     const todayM = today.getMonth();
-    const uploadD = new Date(uploadMonth+'-01');
-    const uploadY = uploadD.getFullYear();
-    const uploadM = uploadD.getMonth();
-    crMonthOffset = (uploadY - todayY) * 12 + (uploadM - todayM);
+    const uploadD = new Date(uploadDate.slice(0,7)+'-01');
+    crMonthOffset = (uploadD.getFullYear() - todayY) * 12 + (uploadD.getMonth() - todayM);
   }
   closeOv('ov-cr'); renderCreators(); updateSB();
 });
@@ -1742,7 +1739,9 @@ function renderCreators() {
     renderCreatorsArchive(getCrMonth(crMonthOffset));
     return;
   }
-  const crs=bd().creators;
+  // 해당 달 기준으로 필터링
+  const thisMonth = getCrMonth(crMonthOffset);
+  const crs = bd().creators.filter(cr => !cr.date || cr.date.slice(0,7) === thisMonth);
   const sl={new:'미접촉',contact:'연락중',confirmed:'확정',done:'완료'};
   const sb={new:'b-gray',contact:'b-recruit',confirmed:'b-green',done:'b-green'};
   const tot=crs.reduce((s,c)=>s+(c.fee||0),0);
