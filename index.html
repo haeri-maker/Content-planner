@@ -1668,9 +1668,12 @@ document.getElementById('save-cr-btn').addEventListener('click', async () => {
   if (uploadDate) {
     const uploadMonth = uploadDate.slice(0,7);
     const today = new Date();
-    const todayMonth = today.toISOString().slice(0,7);
-    const diff = (new Date(uploadMonth+'-01') - new Date(todayMonth+'-01')) / (1000*60*60*24*30);
-    crMonthOffset = Math.round(diff);
+    const todayY = today.getFullYear();
+    const todayM = today.getMonth();
+    const uploadD = new Date(uploadMonth+'-01');
+    const uploadY = uploadD.getFullYear();
+    const uploadM = uploadD.getMonth();
+    crMonthOffset = (uploadY - todayY) * 12 + (uploadM - todayM);
   }
   closeOv('ov-cr'); renderCreators(); updateSB();
 });
