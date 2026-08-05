@@ -228,10 +228,14 @@ td.tdn{color:var(--tx)}
     </div>
   </div>
   <div class="sb-sec">
-    <div class="sb-lbl">메뉴</div>
+    <div class="sb-lbl">브랜드별</div>
     <button class="nav on" data-p="calendar"><div class="ndot" style="background:var(--leps)"></div>캘린더</button>
     <button class="nav" data-p="creators"><div class="ndot" style="background:var(--cr-c)"></div>크리에이터 & 예산</button>
-    <button class="nav" data-p="report"><div class="ndot" style="background:var(--leps)"></div>주간 공유 리포트</button>
+    <button class="nav" data-p="report"><div class="ndot" style="background:var(--leps)"></div>주간 소셜 리포트</button>
+    <div style="height:1px;background:var(--bd);margin:8px 4px"></div>
+    <div class="sb-lbl">공통</div>
+    <button class="nav" data-p="weekly"><div class="ndot" style="background:var(--nuri)"></div>주간 콘텐츠 리포트</button>
+    <button class="nav" data-p="adsreport"><div class="ndot" style="background:var(--plan-c)"></div>주간 광고 리포트</button>
   </div>
   <div class="sb-budget">
     <div id="sb-brand-rows"></div>
@@ -308,6 +312,128 @@ td.tdn{color:var(--tx)}
   </div>
 </div>
 
+<!-- WEEKLY CONTENT REPORT -->
+<div class="panel" id="panel-weekly">
+  <div class="ph">
+    <div>
+      <div class="pt" id="weekly-title">주간 콘텐츠 리포트</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+        <button class="mbtn" onclick="weeklyNav(-1)">‹</button>
+        <span id="weekly-lbl" style="font-size:12px;font-weight:500;min-width:120px;text-align:center"></span>
+        <button class="mbtn" onclick="weeklyNav(1)">›</button>
+      </div>
+    </div>
+    <button class="btn btn-p" onclick="openWeeklyAdd()">+ 콘텐츠 추가</button>
+  </div>
+  <div id="weekly-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:4px"></div>
+</div>
+
+<!-- WEEKLY CONTENT ADD MODAL -->
+<div class="ov" id="ov-weekly">
+  <div class="modal modal-lg">
+    <div class="mh"><span id="weekly-modal-title">콘텐츠 추가</span><button class="xbtn" data-close="ov-weekly">×</button></div>
+    <div class="mb">
+      <div class="fg fg2">
+        <div class="field"><label>브랜드</label>
+          <select id="w-brand">
+            <option value="Nuriglow">Nuriglow</option>
+            <option value="LEPS">LEPS</option>
+            <option value="LEPS_KR">LEPS_KR</option>
+            <option value="Laboreve">Laboreve</option>
+          </select>
+        </div>
+        <div class="field"><label>목적</label><input type="text" id="w-purpose" placeholder="예: 시딩, 광고, 오가닉"></div>
+      </div>
+      <div class="fg fg2">
+        <div class="field"><label>제품명</label><input type="text" id="w-product" placeholder="예: PDRN 토너"></div>
+        <div class="field"><label>크리에이터</label><input type="text" id="w-creator" placeholder="@username"></div>
+      </div>
+      <div class="fg fg3">
+        <div class="field"><label>👁 조회수</label><input type="number" id="w-views" min="0" placeholder="0"></div>
+        <div class="field"><label>💬 댓글</label><input type="number" id="w-comments" min="0" placeholder="0"></div>
+        <div class="field"><label>↗ 공유</label><input type="number" id="w-shares" min="0" placeholder="0"></div>
+      </div>
+      <div class="fg fg3">
+        <div class="field"><label>📸 Instagram 링크</label><input type="url" id="w-ig" placeholder="https://..."></div>
+        <div class="field"><label>🎵 TikTok 링크</label><input type="url" id="w-tt" placeholder="https://..."></div>
+        <div class="field"><label>▶️ YouTube 링크</label><input type="url" id="w-yt" placeholder="https://..."></div>
+      </div>
+      <div class="fg fg1"><div class="field"><label>메모</label><textarea id="w-memo" style="min-height:44px"></textarea></div></div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:10.5px;color:var(--tx2);font-weight:500;margin-bottom:5px">썸네일</div>
+        <div class="pz" id="weekly-pz" tabindex="0">
+          <img id="weekly-pz-img" class="pz-img" style="display:none">
+          <div id="weekly-pz-hint"><div style="font-size:18px;margin-bottom:5px">📋</div>
+            <div style="font-size:11.5px;font-weight:500;color:var(--tx2)">캡처 후 <kbd>Ctrl+V</kbd> 붙여넣기</div>
+            <div style="font-size:10.5px;margin-top:3px">또는 클릭해서 파일 선택</div>
+          </div>
+          <div id="weekly-pz-act" style="display:none;margin-top:6px">
+            <button class="btn btn-d btn-xs" type="button" onclick="clearWeeklyThumb(event)">이미지 제거</button>
+          </div>
+        </div>
+        <input type="file" id="weekly-pz-file" accept="image/*" style="display:none">
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-d" id="btn-del-weekly" style="display:none;margin-right:auto" onclick="delWeekly()">삭제</button>
+      <button class="btn btn-g" data-close="ov-weekly">취소</button>
+      <button class="btn btn-p" onclick="saveWeekly()">저장</button>
+    </div>
+  </div>
+</div>
+<!-- ADS REPORT -->
+<div class="panel" id="panel-adsreport">
+  <div class="ph">
+    <div>
+      <div class="pt">주간 광고 리포트</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+        <button class="mbtn" onclick="adsWeekNav(-1)">‹</button>
+        <span id="ads-week-lbl" style="font-size:12px;font-weight:500;min-width:120px;text-align:center"></span>
+        <button class="mbtn" onclick="adsWeekNav(1)">›</button>
+      </div>
+    </div>
+    <button class="btn btn-p" onclick="openAdsUpload()">📊 데이터 업로드</button>
+  </div>
+
+  <!-- 업로드 섹션 -->
+  <div id="ads-upload-section" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+    <!-- 메타 업로드 -->
+    <div class="card">
+      <div class="card-h">📘 메타 광고 데이터 <span style="font-size:10px;color:var(--tx3);font-weight:400">(PDF 또는 CSV)</span></div>
+      <div style="padding:12px">
+        <div class="pz" id="meta-pz" style="min-height:80px" onclick="document.getElementById('meta-file').click()">
+          <div style="font-size:13px;margin-bottom:5px">📁</div>
+          <div style="font-size:11.5px;font-weight:500;color:var(--tx2)">PDF 또는 CSV 파일 업로드</div>
+          <div style="font-size:10.5px;color:var(--tx3);margin-top:3px">클릭하거나 드래그해서 업로드</div>
+        </div>
+        <input type="file" id="meta-file" accept=".pdf,.csv" style="display:none" onchange="handleMetaFile(this)">
+        <div id="meta-status" style="margin-top:8px;font-size:11px;color:var(--tx3)"></div>
+      </div>
+    </div>
+    <!-- 카페24 업로드 -->
+    <div class="card">
+      <div class="card-h">🛒 카페24 UTM 데이터 <span style="font-size:10px;color:var(--tx3);font-weight:400">(캡처 이미지)</span></div>
+      <div style="padding:12px">
+        <div class="pz" id="cafe-pz" style="min-height:80px" onclick="document.getElementById('cafe-file').click()">
+          <div style="font-size:13px;margin-bottom:5px">📸</div>
+          <div style="font-size:11.5px;font-weight:500;color:var(--tx2)">캡처 이미지 업로드</div>
+          <div style="font-size:10.5px;color:var(--tx3);margin-top:3px">또는 Ctrl+V 붙여넣기</div>
+        </div>
+        <input type="file" id="cafe-file" accept="image/*" style="display:none" onchange="handleCafeFile(this)">
+        <div id="cafe-status" style="margin-top:8px;font-size:11px;color:var(--tx3)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 분석 결과 -->
+  <div id="ads-result"></div>
+
+  <!-- 아카이브 -->
+  <div style="margin-top:24px">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--tx2)">📁 이전 리포트</div>
+    <div id="ads-archive"></div>
+  </div>
+</div>
 </main>
 </div>
 
@@ -883,6 +1009,7 @@ function fillTypeSelect() {
     {value:'ugc', label:'UGC'},
     {value:'meme', label:'텍스트 밈'},
     {value:'creator', label:'크리에이터 릴스'},
+    {value:'yt', label:'YouTube'},
     {value:'plan', label:'기획 주간'},
     {value:'recruit', label:'섭외 주간'},
     {value:'shoot', label:'촬영일'},
@@ -975,6 +1102,8 @@ function renderActive() {
   // budget은 creators 패널에 통합됨
   else if (id==='ugc') { loadUGC().then(renderUGC); }
   else if (id==='report') renderReport();
+  else if (id==='weekly') renderWeekly();
+  else if (id==='adsreport') renderAdsReport();
 }
 
 /* ══ MODALS ══ */
@@ -1082,7 +1211,7 @@ document.getElementById('next-m').addEventListener('click', () => {
 });
 
 function tlbl(t) {
-  const fixed = {ugc:'UGC',meme:'텍스트 밈',creator:'크리에이터 릴스',plan:'기획',recruit:'섭외',shoot:'촬영일'};
+  const fixed = {ugc:'UGC',meme:'텍스트 밈',creator:'크리에이터 릴스',yt:'YouTube',plan:'기획',recruit:'섭외',shoot:'촬영일'};
   if (fixed[t]) return fixed[t];
   const leg = LEGS.find(l => l.id === t);
   if (leg) return leg.name;
@@ -1735,7 +1864,16 @@ function renderBudget() {
 function delExp(id){D[S.brand].expenses=bd().expenses.filter(e=>e._id!==id);dbDel('expenses',id);renderBudget();updateSB();}
 
 /* ══ SIDEBAR ══ */
-function brandTotal(b){if(!D[b])return 0;return D[b].creators.reduce((s,c)=>s+(c.fee||0),0)+D[b].expenses.reduce((s,e)=>s+(e.amount||0),0);}
+function brandTotal(b){
+  if(!D[b]) return 0;
+  const thisMonth = new Date().toISOString().slice(0,7);
+  // 이번달 크리에이터만 합산
+  const crTotal = D[b].creators
+    .filter(cr => !cr.date || cr.date.slice(0,7) === thisMonth)
+    .reduce((s,c)=>s+(c.fee||0),0);
+  const expTotal = D[b].expenses.reduce((s,e)=>s+(e.amount||0),0);
+  return crTotal + expTotal;
+}
 function updateSB() {
   const tots={labo:brandTotal('labo'),leps:brandTotal('leps'),nuri:brandTotal('nuri'),lepskr:brandTotal('lepskr')};
   const grand=Object.values(tots).reduce((s,v)=>s+v,0);
@@ -1793,7 +1931,6 @@ async function loadReportData(brand, offset) {
 }
 async function saveReportData(brand, offset, data) {
   const key = getReportKey(brand, offset);
-  localStorage.setItem(key, JSON.stringify(data)); // 로컬 캐시
   await db.from('reports').upsert({ key, data }, { onConflict: 'key' });
 }
 
@@ -1975,21 +2112,44 @@ async function renderMetricChange() {
   });
 }
 
-function renderReportArchive(brand) {
-  const keys = [];
-  for(let k in localStorage) {
-    if (k.startsWith(`report-${brand}-offset`) && k !== getReportKey(brand,reportOffset) && k !== getReportKey(brand,reportOffset-1)) {
-      const offset = parseInt(k.replace(`report-${brand}-offset`,''));
-      if (!isNaN(offset)) keys.push(offset);
-    }
-  }
+async function renderReportArchive(brand) {
+  // Supabase에서 아카이브 로드
+  document.getElementById('report-archive').innerHTML = '<div style="color:var(--tx3);font-size:11px;padding:8px 0">⏳ 로드 중...</div>';
+  const { data: archiveRows } = await db.from('reports').select('key,data').like('key', 'report-'+brand+'-%').order('key', {ascending:false});
+  const curKey = getReportKey(brand, reportOffset);
+  const prevKey = getReportKey(brand, reportOffset-1);
+  const archiveKeys = (archiveRows||[]).filter(r => r.key !== curKey && r.key !== prevKey);
+  if (!archiveKeys.length) { document.getElementById('report-archive').innerHTML='<div style="color:var(--tx3);font-size:11px;padding:8px 0">저장된 리포트 없음</div>'; return; }
+  // 아카이브 렌더링 - 비동기 처리
+  const archiveHtmlParts = await Promise.all(archiveKeys.map(async row => {
+    // key에서 주 정보 추출
+    const weekId = row.key.replace('report-'+brand+'-', '');
+    const curData = row.data || {};
+    // 이전 주 key 계산 (현재 주 -1)
+    const prevRowKey = 'report-'+brand+'-'+weekId; // 임시
+    const rows2 = REPORT_METRICS.filter(m=>curData[m]).map(m=>{
+      const ch = null;
+      const chTxt = '—';
+      return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--bd);font-size:11px">
+        <span style="color:var(--tx2)">${m}</span>
+        <span style="font-family:'DM Mono',monospace;color:var(--tx)">${curData[m]||'—'}</span>
+        <span style="font-family:'DM Mono',monospace;color:#999">${chTxt}</span></div>`;
+    }).join('');
+    return `<div class="card" style="margin-bottom:9px">
+      <div class="card-h" style="font-size:11px">${weekId}</div>
+      <div style="padding:8px 12px">${rows2||'<div style="color:var(--tx3);font-size:11px">데이터 없음</div>'}</div>
+    </div>`;
+  }));
+  document.getElementById('report-archive').innerHTML = archiveHtmlParts.join('');
+  return; // 아래 구버전 코드 실행 방지
+  const keys = []; // dead code
   keys.sort((a,b)=>b-a);
-  if (!keys.length) { document.getElementById('report-archive').innerHTML='<div style="color:var(--tx3);font-size:11px;padding:8px 0">저장된 리포트 없음</div>'; return; }
+  if (!keys.length) { document.getElementById('report-archive').innerHTML=''; return; }
   document.getElementById('report-archive').innerHTML = keys.map(offset => {
     const {start,end} = getWeekRange(offset);
     const prevW = getWeekRange(offset-1);
-    const data = loadReportData(brand, offset);
-    const prevData = loadReportData(brand, offset-1);
+    const data = {}; // placeholder
+    const prevData = {};
     const rows = REPORT_METRICS.filter(m=>data[m]||prevData[m]).map(m=>{
       const cur=Number(data[m]||0), prev=Number(prevData[m]||0);
       const ch = prev ? Math.round((cur-prev)/prev*100) : null;
@@ -2454,14 +2614,24 @@ function crMonthNav(dir) {
 
 async function autoArchiveIfNeeded() {
   const thisMonth = new Date().toISOString().slice(0,7);
-  const lastKey = 'cr-last-archive-'+S.brand;
-  if (localStorage.getItem(lastKey) === thisMonth) return;
-  const crs = bd().creators;
-  if (!crs.length) { localStorage.setItem(lastKey, thisMonth); return; }
   const prevMonth = (() => { const d=new Date(); d.setMonth(d.getMonth()-1); return d.toISOString().slice(0,7); })();
-  await doArchive(prevMonth);
-  localStorage.setItem(lastKey, thisMonth);
-  console.log('✅ 자동 아카이브:', prevMonth);
+  // 모든 브랜드 체크
+  for (const brand of ['labo','leps','nuri','lepskr']) {
+    const lastKey = 'cr-last-archive-'+brand;
+    if (localStorage.getItem(lastKey) === thisMonth) continue;
+    const crs = D[brand]?.creators||[];
+    if (!crs.length) { localStorage.setItem(lastKey, thisMonth); continue; }
+    // 이전달 데이터가 있는지 확인 (업로드일이 이전달인 크리에이터)
+    const hasOldData = crs.some(cr => !cr.date || cr.date.slice(0,7) <= prevMonth);
+    if (!hasOldData) { localStorage.setItem(lastKey, thisMonth); continue; }
+    // 원래 브랜드 저장하고 임시 전환
+    const origBrand = S.brand;
+    S.brand = brand;
+    await doArchive(prevMonth);
+    S.brand = origBrand;
+    localStorage.setItem(lastKey, thisMonth);
+    console.log('✅ 자동 아카이브:', brand, prevMonth);
+  }
 }
 
 async function doArchive(month) {
@@ -2534,19 +2704,29 @@ async function saveVideoEdit() {
 }
 
 /* ══ REPORT INSIGHT ══ */
-function getInsightKey(brand, offset) { return 'insight-'+brand+'-'+offset; }
+function getWeekId(offset) {
+  // 실제 날짜 기반 주 ID (YYYY-Www) 반환
+  const d = new Date();
+  const day = (d.getDay()+6)%7;
+  d.setDate(d.getDate() - day + offset*7);
+  const y = d.getFullYear();
+  const startOfYear = new Date(y, 0, 1);
+  const weekNum = Math.ceil(((d - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+  return `${y}-W${String(weekNum).padStart(2,'0')}`;
+}
+
+function getInsightKey(brand, offset) { return 'insight-'+brand+'-'+getWeekId(offset); }
+function getReportKey(brand, offset) { return 'report-'+brand+'-'+getWeekId(offset); }
 
 async function saveInsight(text) {
   const key = getInsightKey(S.brand, reportOffset);
-  localStorage.setItem(key, text);
+  // localStorage 캐시 (offset 기반 오래된 것 정리)
+  localStorage.removeItem('insight-'+S.brand+'-'+reportOffset); // 구버전 제거
   await db.from('reports').upsert({ key, data: { insight: text } }, { onConflict: 'key' });
 }
 
 async function loadInsight(brand, offset) {
   const key = getInsightKey(brand, offset);
-  // 로컬 캐시 먼저
-  const local = localStorage.getItem(key);
-  if (local !== null) return local;
   try {
     const { data } = await db.from('reports').select('data').eq('key', key).single();
     return data?.data?.insight || '';
@@ -2603,6 +2783,492 @@ document.addEventListener('paste', async e => {
   applyCrThumb(base64);
   uploadBase64ToStorage(base64).then(url => { if(url) crThumb = url; });
 }, true);
+
+
+/* ══ WEEKLY CONTENT REPORT ══ */
+let weeklyOffset = 0;
+let weeklyEditId = null;
+let weeklyThumb = null;
+const WEEKLY_DATA = {}; // { 'brand-YYYY-WW': [{id,title,creator,views,comments,shares,ig,tt,yt,memo,thumb}] }
+
+function getWeekKey(brand, offset) {
+  if (brand === 'weekly') brand = 'common'; // 공통 페이지
+  const d = new Date();
+  const day = (d.getDay()+6)%7;
+  d.setDate(d.getDate() - day + offset*7);
+  const y = d.getFullYear();
+  const start = new Date(d);
+  const end = new Date(d); end.setDate(d.getDate()+6);
+  const fmt = x => `${x.getMonth()+1}/${x.getDate()}`;
+  return { key: brand+'-'+y+'-W'+String(Math.ceil((d-new Date(y,0,1))/604800000)+1).padStart(2,'0'),
+           label: `${y}년 ${fmt(start)} – ${fmt(end)}` };
+}
+
+function weeklyNav(dir) { weeklyOffset += dir; renderWeekly(); }
+
+function loadWeeklyData(brand, offset) {
+  const {key} = getWeekKey(brand, offset);
+  const local = localStorage.getItem('weekly-'+key);
+  return local ? JSON.parse(local) : [];
+}
+function saveWeeklyData(brand, offset, data) {
+  const {key} = getWeekKey(brand, offset);
+  localStorage.setItem('weekly-'+key, JSON.stringify(data));
+}
+
+function applyWeeklyThumb(data) {
+  weeklyThumb = data;
+  const img = document.getElementById('weekly-pz-img');
+  img.src = data; img.style.display = 'block';
+  document.getElementById('weekly-pz-hint').style.display = 'none';
+  document.getElementById('weekly-pz-act').style.display = '';
+}
+function clearWeeklyThumb(e) {
+  if(e) e.stopPropagation();
+  weeklyThumb = null;
+  document.getElementById('weekly-pz-img').style.display = 'none';
+  document.getElementById('weekly-pz-hint').style.display = '';
+  document.getElementById('weekly-pz-act').style.display = 'none';
+}
+
+function openWeeklyAdd() {
+  weeklyEditId = null; weeklyThumb = null; clearWeeklyThumb();
+  document.getElementById('weekly-modal-title').textContent = '콘텐츠 추가';
+  document.getElementById('btn-del-weekly').style.display = 'none';
+  ['w-product','w-creator','w-purpose','w-ig','w-tt','w-yt','w-memo'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  const wb=document.getElementById('w-brand'); if(wb) wb.value={labo:'Laboreve',leps:'LEPS',nuri:'Nuriglow',lepskr:'LEPS_KR'}[S.brand]||'Nuriglow';
+  ['w-views','w-comments','w-shares'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  openOv('ov-weekly');
+}
+
+function openWeeklyEdit(id) {
+  const data = loadWeeklyData('weekly', weeklyOffset);
+  const item = data.find(x=>x.id===id);
+  if (!item) return;
+  weeklyEditId = id; weeklyThumb = item.thumb||null;
+  document.getElementById('weekly-modal-title').textContent = '콘텐츠 편집';
+  document.getElementById('btn-del-weekly').style.display = '';
+  const wb2=document.getElementById('w-brand'); if(wb2) wb2.value=item.brand||'Nuriglow';
+  document.getElementById('w-product').value = item.product||'';
+  document.getElementById('w-purpose').value = item.purpose||'';
+  document.getElementById('w-creator').value = item.creator||'';
+  document.getElementById('w-views').value = item.views||'';
+  document.getElementById('w-comments').value = item.comments||'';
+  document.getElementById('w-shares').value = item.shares||'';
+  document.getElementById('w-ig').value = item.ig||'';
+  document.getElementById('w-tt').value = item.tt||'';
+  document.getElementById('w-yt').value = item.yt||'';
+  document.getElementById('w-memo').value = item.memo||'';
+  if (item.thumb) applyWeeklyThumb(item.thumb);
+  else clearWeeklyThumb();
+  openOv('ov-weekly');
+}
+
+async function saveWeekly() {
+  let thumb = weeklyThumb;
+  if (thumb && !isStorageUrl(thumb)) {
+    const url = await uploadBase64ToStorage(thumb);
+    if (url) thumb = url;
+  }
+  const item = {
+    id: weeklyEditId || gid(),
+    brand: document.getElementById('w-brand')?.value||'',
+    product: document.getElementById('w-product')?.value||'',
+    purpose: document.getElementById('w-purpose')?.value||'',
+    creator: document.getElementById('w-creator').value,
+    views: parseInt(document.getElementById('w-views').value)||0,
+    comments: parseInt(document.getElementById('w-comments').value)||0,
+    shares: parseInt(document.getElementById('w-shares').value)||0,
+    ig: document.getElementById('w-ig').value.trim(),
+    tt: document.getElementById('w-tt').value.trim(),
+    yt: document.getElementById('w-yt').value.trim(),
+    memo: document.getElementById('w-memo').value,
+    thumb: thumb||'',
+  };
+  let data = loadWeeklyData('weekly', weeklyOffset);
+  if (weeklyEditId) {
+    data = data.map(x => x.id===weeklyEditId ? item : x);
+  } else {
+    if (data.length >= 6) { alert('한 주 최대 6개까지 추가할 수 있어요!'); return; }
+    data.push(item);
+  }
+  saveWeeklyData('weekly', weeklyOffset, data);
+  closeOv('ov-weekly');
+  renderWeekly();
+}
+
+function delWeekly() {
+  if (!confirm('삭제할까요?')) return;
+  let data = loadWeeklyData('weekly', weeklyOffset);
+  data = data.filter(x=>x.id!==weeklyEditId);
+  saveWeeklyData('weekly', weeklyOffset, data);
+  closeOv('ov-weekly');
+  renderWeekly();
+}
+
+function renderWeekly() {
+  const {label} = getWeekKey(S.brand, weeklyOffset);
+  document.getElementById('weekly-lbl').textContent = label;
+  document.getElementById('weekly-title').textContent = '주간 콘텐츠 리포트';
+  const data = loadWeeklyData('weekly', weeklyOffset);
+  if (!data.length) {
+    document.getElementById('weekly-grid').innerHTML =
+      '<div class="empty" style="grid-column:1/-1"><div class="empty-i">📋</div>이번 주 콘텐츠를 추가해보세요 (최대 6개)</div>';
+    return;
+  }
+  document.getElementById('weekly-grid').innerHTML = data.map(item => `
+    <div class="card" style="cursor:pointer;overflow:hidden" onclick="openWeeklyEdit('${item.id}')">
+      ${item.thumb ? `<img src="${item.thumb}" style="width:100%;aspect-ratio:4/5;object-fit:cover;display:block;max-height:180px">` :
+        '<div style="height:100px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px">📹</div>'}
+      <div style="padding:10px 12px">
+        ${item.brand?`<div style="font-size:9.5px;font-weight:600;color:var(--a);margin-bottom:3px">[${item.brand}]</div>`:''}
+        ${item.product?`<div style="font-size:13px;font-weight:600;margin-bottom:2px;line-height:1.3">${item.product}</div>`:''}
+        <div style="font-size:11px;color:var(--tx2);margin-bottom:5px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+          ${item.creator?`<span>@${item.creator}</span>`:''}
+          ${item.purpose?`<span style="padding:1px 7px;border-radius:10px;background:var(--bg4);color:var(--tx2);border:0.5px solid var(--bd2)">${item.purpose}</span>`:''}
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:7px;font-size:11px;font-family:'DM Mono',monospace">
+          ${item.views?`<span>👁 ${Number(item.views).toLocaleString()}</span>`:''}
+          ${item.comments?`<span>💬 ${Number(item.comments).toLocaleString()}</span>`:''}
+          ${item.shares?`<span>↗ ${Number(item.shares).toLocaleString()}</span>`:''}
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap" onclick="event.stopPropagation()">
+          ${item.ig?`<a href="${item.ig}" target="_blank" style="flex:1;text-align:center;padding:5px;border-radius:var(--rs);background:#c8306a;color:#fff;font-size:10.5px;font-weight:700;text-decoration:none">📸 IG</a>`:''}
+          ${item.tt?`<a href="${item.tt}" target="_blank" style="flex:1;text-align:center;padding:5px;border-radius:var(--rs);background:#111;color:#fff;font-size:10.5px;font-weight:700;text-decoration:none">🎵 TT</a>`:''}
+          ${item.yt?`<a href="${item.yt}" target="_blank" style="flex:1;text-align:center;padding:5px;border-radius:var(--rs);background:#ff0000;color:#fff;font-size:10.5px;font-weight:700;text-decoration:none">▶️ YT</a>`:''}
+        </div>
+        ${item.memo?`<div style="font-size:10.5px;color:var(--tx3);margin-top:7px;line-height:1.5">${item.memo}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+// 썸네일 파일 업로드
+(function setupWeeklyPZ() {
+  const pz = document.getElementById('weekly-pz');
+  const fi = document.getElementById('weekly-pz-file');
+  if (!pz || !fi) return;
+  pz.addEventListener('click', e => { if(e.target.tagName==='BUTTON') return; fi.click(); });
+  fi.addEventListener('change', async e => {
+    const f=e.target.files[0]; if(!f) return;
+    applyWeeklyThumb(await readFile(f));
+    fi.value='';
+  });
+})();
+
+// Ctrl+V
+document.addEventListener('paste', async e => {
+  if (!document.getElementById('ov-weekly')?.classList.contains('on')) return;
+  const img = Array.from(e.clipboardData?.items||[]).find(i=>i.type.startsWith('image/'));
+  if (img) applyWeeklyThumb(await readFile(img.getAsFile()));
+}, true);
+
+
+/* ══ ADS REPORT ══ */
+let adsWeekOffset = 0;
+
+function getAdsWeekId(offset) {
+  const d = new Date();
+  const day = (d.getDay()+6)%7;
+  d.setDate(d.getDate() - day + offset*7);
+  const y = d.getFullYear();
+  const startOfYear = new Date(y, 0, 1);
+  const weekNum = Math.ceil(((d - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+  const start = new Date(d);
+  const end = new Date(d); end.setDate(d.getDate()+6);
+  const fmt = x => `${x.getMonth()+1}/${x.getDate()}`;
+  return {
+    id: `${y}-W${String(weekNum).padStart(2,'0')}`,
+    label: `${y}년 ${fmt(start)} – ${fmt(end)}`
+  };
+}
+
+function adsWeekNav(dir) {
+  if (dir > 0 && adsWeekOffset >= 0) return;
+  adsWeekOffset += dir;
+  renderAdsReport();
+}
+
+function getAdsKey(offset) { return 'ads-'+getAdsWeekId(offset).id; }
+
+function loadAdsData(offset) {
+  try { return JSON.parse(localStorage.getItem(getAdsKey(offset))||'null'); } catch { return null; }
+}
+function saveAdsData(offset, data) {
+  localStorage.setItem(getAdsKey(offset), JSON.stringify(data));
+}
+
+function openAdsUpload() {
+  document.getElementById('ads-upload-section').style.display = 'grid';
+}
+
+// 메타 파일 처리
+async function handleMetaFile(input) {
+  const f = input.files[0]; if(!f) return;
+  const status = document.getElementById('meta-status');
+  status.textContent = '⏳ AI 분석 중...';
+  status.style.color = 'var(--tx2)';
+
+  try {
+    let content = '';
+    if (f.type === 'application/pdf' || f.name.endsWith('.pdf')) {
+      // PDF → base64로 Claude API에 전송
+      const base64 = await readFile(f);
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2000,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64.split(',')[1] } },
+              { type: 'text', text: `이 메타 광고 보고서 PDF를 분석해서 다음 정보를 JSON으로만 반환해줘 (다른 텍스트 없이):
+{
+  "period_prev": "이전 주 날짜범위",
+  "period_curr": "이번 주 날짜범위",
+  "summary": [
+    {"metric": "지표명", "prev": 이전값, "curr": 현재값, "change_pct": 증감률숫자}
+  ],
+  "campaigns": [
+    {"name": "캠페인명", "spend_prev": 이전지출, "spend_curr": 현재지출, "purchases_prev": 이전구매, "purchases_curr": 현재구매, "roas_prev": 이전ROAS, "roas_curr": 현재ROAS}
+  ],
+  "top_ads": [
+    {"adset": "광고세트", "ad": "광고명", "spend": 지출, "period": "prev또는curr"}
+  ],
+  "insights": "핵심 인사이트 2-3줄 (광고 효율, 주목할 점, 다음 주 제언)"
+}` }
+            ]
+          }]
+        })
+      });
+      const data = await resp.json();
+      const text = (data.content||[]).find(x=>x.type==='text')?.text||'';
+      const clean = text.replace(/```json|```/g,'').trim();
+      const parsed = JSON.parse(clean);
+      saveAdsDataMeta(adsWeekOffset, parsed);
+      status.textContent = '✅ 메타 분석 완료!';
+      status.style.color = 'var(--nuri)';
+      renderAdsReport();
+    } else if (f.name.endsWith('.csv')) {
+      const text = await f.text();
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2000,
+          messages: [{ role: 'user', content: `이 메타 광고 CSV 데이터를 분석해서 JSON으로만 반환해줘:
+
+${text.slice(0,8000)}
+
+{"period_prev":"","period_curr":"","summary":[{"metric":"","prev":0,"curr":0,"change_pct":0}],"campaigns":[{"name":"","spend_prev":0,"spend_curr":0,"purchases_prev":0,"purchases_curr":0,"roas_prev":0,"roas_curr":0}],"top_ads":[{"adset":"","ad":"","spend":0,"period":"curr"}],"insights":""}` }]
+        })
+      });
+      const data = await resp.json();
+      const text2 = (data.content||[]).find(x=>x.type==='text')?.text||'';
+      const parsed = JSON.parse(text2.replace(/```json|```/g,'').trim());
+      saveAdsDataMeta(adsWeekOffset, parsed);
+      status.textContent = '✅ CSV 분석 완료!';
+      status.style.color = 'var(--nuri)';
+      renderAdsReport();
+    }
+  } catch(e) {
+    status.textContent = '❌ 분석 실패: '+e.message;
+    status.style.color = '#b03030';
+  }
+  input.value = '';
+}
+
+// 카페24 이미지 처리
+async function handleCafeFile(input) {
+  const f = input.files[0]; if(!f) return;
+  const status = document.getElementById('cafe-status');
+  status.textContent = '⏳ AI 분석 중...';
+  status.style.color = 'var(--tx2)';
+  try {
+    const base64 = await readFile(f);
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: f.type||'image/png', data: base64.split(',')[1] } },
+          { type: 'text', text: `이 카페24 UTM 채널별 매출 데이터 이미지를 분석해서 JSON으로만 반환해줘:
+{"channels": [{"name": "채널명", "orders": 주문수, "revenue": 매출액}], "total_orders": 총주문, "total_revenue": 총매출, "period": "기간"}` }
+        ]}]
+      })
+    });
+    const data = await resp.json();
+    const text = (data.content||[]).find(x=>x.type==='text')?.text||'';
+    const parsed = JSON.parse(text.replace(/```json|```/g,'').trim());
+    saveAdsDataCafe(adsWeekOffset, parsed);
+    status.textContent = '✅ 카페24 분석 완료!';
+    status.style.color = 'var(--nuri)';
+    renderAdsReport();
+  } catch(e) {
+    status.textContent = '❌ 분석 실패: '+e.message;
+    status.style.color = '#b03030';
+  }
+  input.value = '';
+}
+
+// 카페24 Ctrl+V
+document.addEventListener('paste', async e => {
+  if (!document.getElementById('panel-adsreport')?.classList.contains('on')) return;
+  const img = Array.from(e.clipboardData?.items||[]).find(i=>i.type.startsWith('image/'));
+  if (!img) return;
+  const file = img.getAsFile();
+  const status = document.getElementById('cafe-status');
+  status.textContent = '⏳ AI 분석 중...';
+  const base64 = await readFile(file);
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6', max_tokens: 1500,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: 'image/png', data: base64.split(',')[1] } },
+          { type: 'text', text: '이 카페24 UTM 채널별 매출 데이터를 JSON으로만 반환해줘: {"channels":[{"name":"","orders":0,"revenue":0}],"total_orders":0,"total_revenue":0,"period":""}' }
+        ]}]
+      })
+    });
+    const data = await resp.json();
+    const parsed = JSON.parse((data.content||[]).find(x=>x.type==='text')?.text?.replace(/```json|```/g,'').trim()||'{}');
+    saveAdsDataCafe(adsWeekOffset, parsed);
+    status.textContent = '✅ 완료!'; status.style.color = 'var(--nuri)';
+    renderAdsReport();
+  } catch(e) { status.textContent = '❌ 실패: '+e.message; status.style.color='#b03030'; }
+});
+
+function saveAdsDataMeta(offset, metaData) {
+  const key = getAdsKey(offset);
+  const existing = loadAdsData(offset)||{};
+  existing.meta = metaData;
+  saveAdsData(offset, existing);
+}
+function saveAdsDataCafe(offset, cafeData) {
+  const key = getAdsKey(offset);
+  const existing = loadAdsData(offset)||{};
+  existing.cafe = cafeData;
+  saveAdsData(offset, existing);
+}
+
+function renderAdsReport() {
+  const {label} = getAdsWeekId(adsWeekOffset);
+  document.getElementById('ads-week-lbl').textContent = label;
+  const data = loadAdsData(adsWeekOffset);
+  const result = document.getElementById('ads-result');
+  if (!data) {
+    result.innerHTML = '<div class="empty"><div class="empty-i">📊</div>메타 또는 카페24 데이터를 업로드해주세요</div>';
+    renderAdsArchive();
+    return;
+  }
+
+  let html = '';
+
+  // 메타 분석 결과
+  if (data.meta) {
+    const m = data.meta;
+    html += `<div class="card" style="margin-bottom:14px">
+      <div class="card-h" style="font-size:13px">📘 메타 광고 분석
+        <span style="font-size:10px;font-weight:400;color:var(--tx3);margin-left:8px">${m.period_prev||''} → ${m.period_curr||''}</span>
+      </div>
+      <div style="padding:14px">`;
+
+    // 요약 지표
+    if (m.summary?.length) {
+      html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:14px">`;
+      m.summary.forEach(s => {
+        const up = s.change_pct > 0;
+        const color = up ? '#0a7050' : '#c8306a';
+        const arrow = up ? '▲' : '▼';
+        html += `<div style="padding:10px 12px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--bd)">
+          <div style="font-size:10.5px;color:var(--tx2);margin-bottom:3px">${s.metric}</div>
+          <div style="font-size:16px;font-weight:700;font-family:'DM Mono',monospace">${typeof s.curr === 'number' ? s.curr.toLocaleString() : s.curr}</div>
+          <div style="font-size:11px;color:${color};margin-top:2px">${arrow} ${Math.abs(s.change_pct)}%</div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
+    // 캠페인별
+    if (m.campaigns?.length) {
+      html += `<div style="margin-bottom:12px"><div style="font-size:11.5px;font-weight:600;margin-bottom:7px;color:var(--tx2)">캠페인별 비교</div>
+        <div class="tbl-wrap"><table style="width:100%">
+          <thead><tr><th>캠페인</th><th style="text-align:right">지출 (전→현)</th><th style="text-align:right">구매</th><th style="text-align:right">ROAS</th></tr></thead>
+          <tbody>${m.campaigns.map(cp => {
+            const roasUp = cp.roas_curr > cp.roas_prev;
+            return `<tr>
+              <td class="tdn" style="font-size:12px">${cp.name}</td>
+              <td style="text-align:right;font-size:11px;font-family:'DM Mono',monospace">₩${(cp.spend_prev||0).toLocaleString()} → ₩${(cp.spend_curr||0).toLocaleString()}</td>
+              <td style="text-align:right;font-size:12px">${cp.purchases_prev||0} → ${cp.purchases_curr||0}</td>
+              <td style="text-align:right;font-weight:600;color:${roasUp?'#0a7050':'#c8306a'}">${cp.roas_prev||0}% → ${cp.roas_curr||0}%</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>
+      </div>`;
+    }
+
+
+    // 인사이트
+    if (m.insights) {
+      html += `<div style="padding:10px 12px;background:var(--plan-bg);border:1px solid var(--plan-bd);border-radius:var(--rs);font-size:12px;line-height:1.7;color:var(--tx);margin-top:8px">
+        💡 ${m.insights}</div>`;
+    }
+    html += `</div></div>`;
+  }
+
+  // 카페24 분석 결과
+  if (data.cafe) {
+    const cf = data.cafe;
+    html += `<div class="card" style="margin-bottom:14px">
+      <div class="card-h" style="font-size:13px">🛒 카페24 채널별 매출
+        <span style="font-size:10px;font-weight:400;color:var(--tx3);margin-left:8px">${cf.period||''}</span>
+      </div>
+      <div style="padding:14px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:14px">
+          <div style="padding:10px 12px;background:var(--a-bg);border:1px solid var(--a-bd);border-radius:var(--r);grid-column:1/-1;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:12px;font-weight:600">총 매출</span>
+            <span style="font-size:18px;font-weight:700;font-family:'DM Mono',monospace;color:var(--a)">₩${(cf.total_revenue||0).toLocaleString()}</span>
+          </div>
+          ${(cf.channels||[]).map(ch => `
+            <div style="padding:10px 12px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--bd)">
+              <div style="font-size:10.5px;color:var(--tx2);margin-bottom:3px">${ch.name}</div>
+              <div style="font-size:15px;font-weight:700;font-family:'DM Mono',monospace">₩${(ch.revenue||0).toLocaleString()}</div>
+              <div style="font-size:10.5px;color:var(--tx3);margin-top:2px">${ch.orders||0}건</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  result.innerHTML = html || '<div class="empty"><div class="empty-i">📊</div>데이터를 업로드해주세요</div>';
+  renderAdsArchive();
+}
+
+function renderAdsArchive() {
+  const archive = document.getElementById('ads-archive');
+  const keys = [];
+  for (let i = 1; i <= 12; i++) {
+    const key = getAdsKey(-i);
+    const data = loadAdsData(-i);
+    if (data) keys.push({ offset: -i, label: getAdsWeekId(-i).label, data });
+  }
+  if (!keys.length) { archive.innerHTML = '<div style="color:var(--tx3);font-size:11px">이전 리포트 없음</div>'; return; }
+  archive.innerHTML = keys.map(k => `
+    <div class="card" style="margin-bottom:8px;cursor:pointer" onclick="adsWeekOffset=${k.offset};renderAdsReport()">
+      <div class="card-h" style="font-size:11px">${k.label}
+        ${k.data.meta ? '<span style="margin-left:6px;font-size:9px;padding:1px 5px;background:#eef;border-radius:3px">메타</span>' : ''}
+        ${k.data.cafe ? '<span style="margin-left:3px;font-size:9px;padding:1px 5px;background:#efe;border-radius:3px">카페24</span>' : ''}
+      </div>
+    </div>`).join('');
+}
+
+// renderActive에 adsreport 추가
 
 </script>
 </body>
