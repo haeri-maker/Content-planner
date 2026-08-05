@@ -1921,7 +1921,7 @@ function weekDates(offset) {
   for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) dates.push(fmtKey(new Date(d)));
   return dates;
 }
-function getReportKey(brand, offset) { return `report-${brand}-offset${offset}`; }
+function getReportKey(brand, offset) { return 'report-'+brand+'-'+getWeekId(offset).id; }
 async function loadReportData(brand, offset) {
   const key = getReportKey(brand, offset);
   try {
@@ -2130,7 +2130,11 @@ async function renderReportArchive(brand) {
   // 아카이브 렌더링 - 비동기 처리
   const archiveHtmlParts = await Promise.all(archiveKeys.map(async row => {
     // key에서 주 정보 추출
-    const weekId = row.key.replace('report-'+brand+'-', '').replace('offset','W').replace('-','주 전');
+    const rawId = row.key.replace('report-'+brand+'-', '');
+    // 구버전: offset-2 → "2주 전", 신버전: 2026-W29 → "2026-W29"
+    const weekId = rawId.startsWith('offset') 
+      ? rawId.replace('offset','').replace(/^-?(\d+)$/, (_, n) => n === '0' ? '이번 주' : n+' 주 전')
+      : rawId;
     const curData = row.data || {};
     // 이전 주 key 계산 (현재 주 -1)
     const prevRowKey = 'report-'+brand+'-'+weekId; // 임시
