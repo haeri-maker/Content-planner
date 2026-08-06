@@ -1868,17 +1868,26 @@ function weekDates(offset) {
 }
 function getReportKey(brand, offset) { return 'report-'+brand+'-'+getWeekId(offset).id; }
 async function loadReportData(brand, offset) {
+  // 1. 신버전 날짜 기반 key 시도
   const key = getReportKey(brand, offset);
   try {
     const { data } = await db.from('reports').select('data').eq('key', key).single();
     if (data?.data && Object.keys(data.data).length) return data.data;
   } catch {}
-  // 구버전 offset 기반 key도 시도 (offset0, offset-1, offset-2 형식)
+  // 2. 구버전 offset key 시도 (offset0, offset-1, offset-2)
   const oldKey = 'report-'+brand+'-offset'+(offset === 0 ? '0' : offset);
   try {
     const { data } = await db.from('reports').select('data').eq('key', oldKey).single();
     if (data?.data && Object.keys(data.data).length) return data.data;
   } catch {}
+  // 3. 구버전 양수 offset key 시도 (offset-1 → offset1 형식도 있을 수 있음)
+  const oldKey2 = 'report-'+brand+'-offset'+Math.abs(offset);
+  if (oldKey2 !== oldKey) {
+    try {
+      const { data } = await db.from('reports').select('data').eq('key', oldKey2).single();
+      if (data?.data && Object.keys(data.data).length) return data.data;
+    } catch {}
+  }
   return {};
 }
 async function saveReportData(brand, offset, data) {
@@ -2072,7 +2081,9 @@ async function renderMetricChange() {
 async function renderReportArchive(brand) {
   // Supabase에서 아카이브 로드 (신버전 + 구버전 key 모두)
   document.getElementById('report-archive').innerHTML = '<div style="color:var(--tx3);font-size:11px;padding:8px 0">⏳ 로드 중...</div>';
-  const { data: archiveRows } = await db.from('reports').select('key,data').or('key.like.report-'+brand+'-20%,key.like.report-'+brand+'-offset%').order('key', {ascending:false});
+  const { data: r1 } = await db.from('reports').select('key,data').like('key', 'report-'+brand+'-20%');
+  const { data: r2 } = await db.from('reports').select('key,data').like('key', 'report-'+brand+'-offset%');
+  const archiveRows = [...(r1||[]), ...(r2||[])].sort((a,b) => b.key.localeCompare(a.key));
   const curKey = getReportKey(brand, reportOffset);
   const prevKey = getReportKey(brand, reportOffset-1);
   const archiveKeys = (archiveRows||[]).filter(r => r.key !== curKey && r.key !== prevKey);
@@ -2081,10 +2092,20 @@ async function renderReportArchive(brand) {
   const archiveHtmlParts = await Promise.all(archiveKeys.map(async row => {
     // key에서 주 정보 추출
     const rawId = row.key.replace('report-'+brand+'-', '');
-    // 구버전: offset-2 → "2주 전", 신버전: 2026-W29 → "2026-W29"
-    const weekId = rawId.startsWith('offset') 
-      ? rawId.replace('offset','').replace(/^-?(\d+)$/, (_, n) => n === '0' ? '이번 주' : n+' 주 전')
-      : rawId;
+    let weekId = rawId;
+    if (rawId.startsWith('offset')) {
+      const n = parseInt(rawId.replace('offset',''))||0;
+      weekId = n === 0 ? '이번 주' : Math.abs(n)+'주 전';
+    } else if (rawId.match(/^\d{4}-W\d+$/)) {
+      // 2026-W29 형식 → 날짜 계산
+      const [y, w] = rawId.split('-W');
+      const jan1 = new Date(parseInt(y), 0, 1);
+      const weekStart = new Date(jan1.getTime() + (parseInt(w)-1)*7*24*3600*1000);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+      const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
+      const fmt = d => `${d.getMonth()+1}/${d.getDate()}`;
+      weekId = `${y}년 ${fmt(weekStart)}–${fmt(weekEnd)}`;
+    }
     const curData = row.data || {};
     // 이전 주 key 계산 (현재 주 -1)
     const prevRowKey = 'report-'+brand+'-'+weekId; // 임시
