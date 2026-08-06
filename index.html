@@ -1372,7 +1372,13 @@ function openSlotAdd(date) {
   document.getElementById('s-type').value='ugc';
   document.getElementById('s-time').value='10:00';
   ['ig-views','ig-like','ig-comment','ig-share','ig-save','ig-repost','tt-views','tt-like','tt-comment','tt-save'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  openOv('ov-slot');
+  // LEPS_KR일 때만 YT 필드 표시
+  const ytWrap = document.getElementById('s-yt-wrap');
+  if (ytWrap) ytWrap.style.display = S.brand === 'lepskr' ? '' : 'none';
+  // LEPS_KR일 때만 YT 필드 표시
+  const ytWrapE = document.getElementById('s-yt-wrap');
+  if (ytWrapE) ytWrapE.style.display = S.brand === 'lepskr' ? '' : 'none';
+    openOv('ov-slot');
 }
 function openSlotEdit(id) {
   const s = bd().slots.find(x=>x._id===id); if(!s) return;
