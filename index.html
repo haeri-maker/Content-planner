@@ -445,6 +445,15 @@ td.tdn{color:var(--tx)}
           <div class="field"><label>저장</label><input type="number" id="tt-save" min="0" placeholder="0"></div>
         </div>
       </div>
+      <div id="yt-stats-wrap" style="display:none;margin-bottom:10px;border:1px solid #ff000033;border-radius:var(--r)">
+        <div style="padding:8px 12px;background:#ff000011;border-radius:var(--r) var(--r) 0 0;font-size:10.5px;font-weight:600;color:#ff0000">▶️ YouTube 인터렉션</div>
+        <div style="padding:10px 12px;display:grid;grid-template-columns:repeat(4,1fr);gap:7px">
+          <div class="field"><label>조회수</label><input type="number" id="yt-views" min="0" placeholder="0"></div>
+          <div class="field"><label>좋아요</label><input type="number" id="yt-like" min="0" placeholder="0"></div>
+          <div class="field"><label>댓글</label><input type="number" id="yt-comment" min="0" placeholder="0"></div>
+          <div class="field"><label>저장</label><input type="number" id="yt-save" min="0" placeholder="0"></div>
+        </div>
+      </div>
       <div style="margin-bottom:8px">
         <div style="font-size:10.5px;color:var(--tx2);font-weight:500;margin-bottom:5px">썸네일</div>
         <div class="pz" id="slot-pz" tabindex="0">
@@ -727,7 +736,7 @@ const db = supabase.createClient(SB_URL, SB_KEY);
 /* ══ CONVERTERS ══ */
 function s2db(s, brand) {
   return { id: s._id, brand, date: s.date, type: s.type, type_custom: s.typeCustom||'',
-    title: s.title, time: s.time, ref: s.ref||'', ig_url: s.igUrl||'', tt_url: s.ttUrl||'', ig_stats: JSON.stringify({...(s.igStats||{}), _sf:(s.statusFlags||{})}), tt_stats: JSON.stringify(s.ttStats||{}), thumb: s.thumb,
+    title: s.title, time: s.time, ref: s.ref||'', ig_url: s.igUrl||'', tt_url: s.ttUrl||'', ig_stats: JSON.stringify({...(s.igStats||{}), _sf:(s.statusFlags||{})}), tt_stats: JSON.stringify(s.ttStats||{}), yt_stats: JSON.stringify(s.ytStats||{}), thumb: s.thumb,
     shoot_location: s.shootLocation, shoot_director: s.shootDirector,
     shoot_creators: s.shootCreators, memo: s.memo,
     content: s.content||'', product: s.product||'', upload_url: s.uploadUrl||'' };
@@ -735,7 +744,7 @@ function s2db(s, brand) {
 function safeJSON(v){try{return v?JSON.parse(v):{};}catch{return{};}} 
 function db2s(r) {
   return { _id: r.id, date: r.date||'', type: r.type||'ugc', typeCustom: r.type_custom||'',
-    title: r.title||'', time: r.time||'', ref: r.ref||'', igUrl: r.ig_url||'', ttUrl: r.tt_url||'', igStats: (()=>{const _d=safeJSON(r.ig_stats);delete _d._sf;return _d;})(), statusFlags: safeJSON(r.ig_stats)._sf||{}, ttStats: safeJSON(r.tt_stats), thumb: r.thumb||'',
+    title: r.title||'', time: r.time||'', ref: r.ref||'', igUrl: r.ig_url||'', ttUrl: r.tt_url||'', igStats: (()=>{const _d=safeJSON(r.ig_stats);delete _d._sf;return _d;})(), statusFlags: safeJSON(r.ig_stats)._sf||{}, ttStats: safeJSON(r.tt_stats), ytStats: safeJSON(r.yt_stats)||{}, thumb: r.thumb||'',
     shootLocation: r.shoot_location||'', shootDirector: r.shoot_director||'',
     shootCreators: r.shoot_creators||[], memo: r.memo||'',
     content: r.content||'', product: r.product||'', uploadUrl: r.upload_url||'' };
@@ -783,7 +792,7 @@ async function dbDel(table, id) {
   if (error) console.error('del', table, error);
 }
 async function loadDB() {
-  const SLOT_COLS = 'id,brand,date,type,type_custom,title,time,ref,ig_url,tt_url,ig_stats,tt_stats,content,product,shoot_location,shoot_director,shoot_creators,memo';
+  const SLOT_COLS = 'id,brand,date,type,type_custom,title,time,ref,ig_url,tt_url,ig_stats,tt_stats,yt_stats,content,product,shoot_location,shoot_director,shoot_creators,memo';
   // 브랜드별로 나눠서 병렬 로드 (데이터 크기 줄이기)
   const [sL, sE, sN, sK, cr, e, lg] = await Promise.all([
     db.from('slots').select(SLOT_COLS).eq('brand','labo'),
@@ -1371,13 +1380,17 @@ function openSlotAdd(date) {
   document.getElementById('s-date').value=date||'';
   document.getElementById('s-type').value='ugc';
   document.getElementById('s-time').value='10:00';
-  ['ig-views','ig-like','ig-comment','ig-share','ig-save','ig-repost','tt-views','tt-like','tt-comment','tt-save'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['ig-views','ig-like','ig-comment','ig-share','ig-save','ig-repost','tt-views','tt-like','tt-comment','tt-save','yt-views','yt-like','yt-comment','yt-save'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   // LEPS_KR일 때만 YT 필드 표시
   const ytWrap = document.getElementById('s-yt-wrap');
   if (ytWrap) ytWrap.style.display = S.brand === 'lepskr' ? '' : 'none';
+  const ytStats = document.getElementById('yt-stats-wrap');
+  if (ytStats) ytStats.style.display = S.brand === 'lepskr' ? '' : 'none';
   // LEPS_KR일 때만 YT 필드 표시
   const ytWrapE = document.getElementById('s-yt-wrap');
   if (ytWrapE) ytWrapE.style.display = S.brand === 'lepskr' ? '' : 'none';
+  const ytStatsE = document.getElementById('yt-stats-wrap');
+  if (ytStatsE) ytStatsE.style.display = S.brand === 'lepskr' ? '' : 'none';
     openOv('ov-slot');
 }
 function openSlotEdit(id) {
@@ -1726,6 +1739,7 @@ function renderCreators() {
             ${cr.tt?`<a href="${cr.tt}" target="_blank" style="font-size:10px;font-weight:500;color:#111;text-decoration:none;padding:2px 9px;border:1px solid #ccc;border-radius:20px;background:#f5f5f5">🎵 TT ↗</a>`:''}
           ${(s.yt&&S.brand==='lepskr')?`<a href="${s.yt}" target="_blank" style="font-size:10px;font-weight:500;color:#ff0000;text-decoration:none;padding:2px 9px;border:1px solid #ff000044;border-radius:20px;background:#fff0f0">▶️ YT ↗</a>`:''}
           </div>
+          ${S.brand==='lepskr'&&s.ytStats&&(s.ytStats.views||s.ytStats.like)?`<div style="font-size:9.5px;color:#cc0000;margin-top:3px;display:flex;gap:6px;flex-wrap:wrap;padding:3px 6px;background:#fff0f0;border-radius:4px;border:0.5px solid #ff000033">${s.ytStats.views?`<span>👁 ${Number(s.ytStats.views).toLocaleString()}</span>`:''}${s.ytStats.like?`<span>❤️ ${Number(s.ytStats.like).toLocaleString()}</span>`:''}${s.ytStats.comment?`<span>💬 ${Number(s.ytStats.comment).toLocaleString()}</span>`:''}${s.ytStats.save?`<span>🔖 ${Number(s.ytStats.save).toLocaleString()}</span>`:''}</div>`:''}
         </div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
