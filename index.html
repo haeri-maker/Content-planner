@@ -2808,14 +2808,23 @@ function getWeekKey(brand, offset) {
 
 function weeklyNav(dir) { weeklyOffset += dir; renderWeekly(); }
 
-function loadWeeklyData(brand, offset) {
+async function loadWeeklyData(brand, offset) {
   const {key} = getWeekKey(brand, offset);
-  const local = localStorage.getItem('weekly-'+key);
-  return local ? JSON.parse(local) : [];
+  try {
+    const { data } = await db.from('weekly_content').select('data').eq('week_key', key).single();
+    return data?.data || [];
+  } catch {
+    // 로컬 캐시 폴백
+    const local = localStorage.getItem('weekly-'+key);
+    return local ? JSON.parse(local) : [];
+  }
 }
-function saveWeeklyData(brand, offset, data) {
+async function saveWeeklyData(brand, offset, items) {
   const {key} = getWeekKey(brand, offset);
-  localStorage.setItem('weekly-'+key, JSON.stringify(data));
+  await db.from('weekly_content').upsert(
+    { id: key, brand, week_key: key, data: items },
+    { onConflict: 'id' }
+  );
 }
 
 function applyWeeklyThumb(data) {
@@ -2843,8 +2852,8 @@ function openWeeklyAdd() {
   openOv('ov-weekly');
 }
 
-function openWeeklyEdit(id) {
-  const data = loadWeeklyData('weekly', weeklyOffset);
+async function openWeeklyEdit(id) {
+  const data = await loadWeeklyData('weekly', weeklyOffset);
   const item = data.find(x=>x.id===id);
   if (!item) return;
   weeklyEditId = id; weeklyThumb = item.thumb||null;
@@ -2887,32 +2896,32 @@ async function saveWeekly() {
     memo: document.getElementById('w-memo').value,
     thumb: thumb||'',
   };
-  let data = loadWeeklyData('weekly', weeklyOffset);
+  let data = await loadWeeklyData('weekly', weeklyOffset);
   if (weeklyEditId) {
     data = data.map(x => x.id===weeklyEditId ? item : x);
   } else {
     if (data.length >= 6) { alert('한 주 최대 6개까지 추가할 수 있어요!'); return; }
     data.push(item);
   }
-  saveWeeklyData('weekly', weeklyOffset, data);
+  await saveWeeklyData('weekly', weeklyOffset, data);
   closeOv('ov-weekly');
   renderWeekly();
 }
 
-function delWeekly() {
+async function delWeekly() {
   if (!confirm('삭제할까요?')) return;
-  let data = loadWeeklyData('weekly', weeklyOffset);
+  let data = await loadWeeklyData('weekly', weeklyOffset);
   data = data.filter(x=>x.id!==weeklyEditId);
-  saveWeeklyData('weekly', weeklyOffset, data);
+  await saveWeeklyData('weekly', weeklyOffset, data);
   closeOv('ov-weekly');
   renderWeekly();
 }
 
-function renderWeekly() {
+async function renderWeekly() {
   const {label} = getWeekKey(S.brand, weeklyOffset);
   document.getElementById('weekly-lbl').textContent = label;
   document.getElementById('weekly-title').textContent = '주간 콘텐츠 리포트';
-  const data = loadWeeklyData('weekly', weeklyOffset);
+  const data = await loadWeeklyData('weekly', weeklyOffset);
   if (!data.length) {
     document.getElementById('weekly-grid').innerHTML =
       '<div class="empty" style="grid-column:1/-1"><div class="empty-i">📋</div>이번 주 콘텐츠를 추가해보세요 (최대 6개)</div>';
