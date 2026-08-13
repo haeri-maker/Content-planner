@@ -434,12 +434,14 @@ td.tdn{color:var(--tx)}
           <div class="field"><label>저장</label><input type="number" id="ig-save" min="0" placeholder="0"></div>
           <div class="field"><label>리포스트</label><input type="number" id="ig-repost" min="0" placeholder="0"></div>
         </div>
-        <div id="tt-stats-wrap" style="padding:8px 12px;background:var(--bg3);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);font-size:10.5px;font-weight:600;color:#111">🎵 TikTok 인터렉션</div>
+        <div id="tt-stats-wrap">
+        <div style="padding:8px 12px;background:var(--bg3);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);font-size:10.5px;font-weight:600;color:#111">🎵 TikTok 인터렉션</div>
         <div style="padding:10px 12px;display:grid;grid-template-columns:repeat(4,1fr);gap:7px">
           <div class="field"><label>조회수</label><input type="number" id="tt-views" min="0" placeholder="0"></div>
           <div class="field"><label>좋아요</label><input type="number" id="tt-like" min="0" placeholder="0"></div>
           <div class="field"><label>댓글</label><input type="number" id="tt-comment" min="0" placeholder="0"></div>
           <div class="field"><label>저장</label><input type="number" id="tt-save" min="0" placeholder="0"></div>
+        </div>
         </div>
       </div>
       <div id="yt-stats-wrap" style="display:none;margin-bottom:10px;border:1px solid #ff000033;border-radius:var(--r)">
@@ -1421,6 +1423,14 @@ function openSlotEdit(id) {
   const ig=s.igStats||{}, tt=s.ttStats||{}, yt=s.ytStats||{};
   ['views','like','comment','share','save','repost'].forEach(k=>{const el=document.getElementById('ig-'+k);if(el)el.value=ig[k]||'';});
   ['views','like','comment','save'].forEach(k=>{const el=document.getElementById('tt-'+k);if(el)el.value=tt[k]||'';});
+  // LEPS_KR: YT 표시, TT 숨기기
+  const isKRed = S.brand === 'lepskr';
+  ['s-yt-wrap','yt-stats-wrap'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=isKRed?'':'none'; });
+  ['s-tt-wrap','tt-stats-wrap'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display=isKRed?'none':''; });
+  // YT 값 로드
+  const yt2 = s.ytStats||{};
+  ['views','like','comment','save'].forEach(k=>{const el=document.getElementById('yt-'+k);if(el)el.value=yt2[k]||'';});
+  if(document.getElementById('s-ref-yt')) document.getElementById('s-ref-yt').value=s.yt||'';
   closeOv('ov-day'); openOv('ov-slot');
 }
 // textarea: Enter=기본동작유지(줄바꿈), 폼제출방지
