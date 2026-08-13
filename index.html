@@ -1474,6 +1474,12 @@ document.getElementById('save-slot-btn').addEventListener('click', () => {
       comment: parseInt(document.getElementById('tt-comment')?.value)||0,
       save:    parseInt(document.getElementById('tt-save')?.value)||0,
     },
+    ytStats: {
+      views:   parseInt(document.getElementById('yt-views')?.value)||0,
+      like:    parseInt(document.getElementById('yt-like')?.value)||0,
+      comment: parseInt(document.getElementById('yt-comment')?.value)||0,
+      save:    parseInt(document.getElementById('yt-save')?.value)||0,
+    },
   };
   if(!d.date) return;
   let obj;
