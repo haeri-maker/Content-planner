@@ -3299,14 +3299,14 @@ function saveApiKey() {
     // 간단한 체크 - btoa 기반
     return btoa(unescape(encodeURIComponent(str)));
   }
-  const saved = sessionStorage.getItem('planner-auth');
+  const saved = localStorage.getItem('planner-auth');
   if (saved === 'ok') {
     document.getElementById('pw-screen').style.display = 'none';
   }
   window.checkPW = function() {
     const val = document.getElementById('pw-input').value;
     if (val === 'leps07!') {
-      sessionStorage.setItem('planner-auth', 'ok');
+      localStorage.setItem('planner-auth', 'ok');
       document.getElementById('pw-screen').style.display = 'none';
     } else {
       document.getElementById('pw-error').style.display = 'block';
