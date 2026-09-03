@@ -807,7 +807,7 @@ async function dbDel(table, id) {
   if (error) console.error('del', table, error);
 }
 async function loadDB() {
-  const SLOT_COLS = 'id,brand,date,type,type_custom,title,time,ref,ig_url,tt_url,ig_stats,tt_stats,yt_stats,content,product,shoot_location,shoot_director,shoot_creators,memo';
+  const SLOT_COLS = 'id,brand,date,type,type_custom,title,time,ref,ig_url,tt_url,yt_url,ig_stats,tt_stats,yt_stats,content,product,shoot_location,shoot_director,shoot_creators,memo';
   // 브랜드별로 나눠서 병렬 로드 (데이터 크기 줄이기)
   const [sL, sE, sN, sK, cr, e, lg] = await Promise.all([
     db.from('slots').select(SLOT_COLS).eq('brand','labo'),
