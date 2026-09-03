@@ -1256,16 +1256,11 @@ function renderCal() {
           // 제품 줄바꿈 허용 (여러 제품)
           if(s.product) extra += `<div class="chip-product" style="white-space:normal;line-height:1.5;font-size:9px;color:var(--tx);font-weight:500;margin-top:2px">📦 ${s.product.replace(/\n/g,"<br>")}</div>`;
           // CTA 링크 버튼
-          if(s.igUrl||s.ttUrl) {
+          if(s.igUrl||s.ttUrl||s.yt) {
             extra += `<div style="display:flex;gap:3px;margin-top:4px">`;
-            if(s.igUrl&&s.ttUrl) {
-              extra += `<a href="${s.igUrl}" target="_blank" onclick="event.stopPropagation()" style="flex:1;text-align:center;color:#fff;background:#c8306a;border-radius:5px;padding:4px 0;font-size:10px;font-weight:700;text-decoration:none;display:block">📸 IG</a>`;
-              extra += `<a href="${s.ttUrl}" target="_blank" onclick="event.stopPropagation()" style="flex:1;text-align:center;color:#fff;background:#111;border-radius:5px;padding:4px 0;font-size:10px;font-weight:700;text-decoration:none;display:block">🎵 TT</a>`;
-            } else if(s.igUrl) {
-              extra += `<a href="${s.igUrl}" target="_blank" onclick="event.stopPropagation()" style="flex:1;text-align:center;color:#fff;background:#c8306a;border-radius:5px;padding:4px 0;font-size:10px;font-weight:700;text-decoration:none;display:block">📸 Instagram</a>`;
-            } else {
-              extra += `<a href="${s.ttUrl}" target="_blank" onclick="event.stopPropagation()" style="flex:1;text-align:center;color:#fff;background:#111;border-radius:5px;padding:4px 0;font-size:10px;font-weight:700;text-decoration:none;display:block">🎵 TikTok</a>`;
-            }
+            if(s.igUrl) extra += `<a href="${s.igUrl}" target="_blank" onclick="event.stopPropagation()" style="flex:1;text-align:center;color:#fff;background:#c8306a;border-radius:5px;padding:4px 0;font-size:10px;font-weight:700;text-decoration:none;display:block">📸 IG</a>`;
+            if(s.ttUrl&&S.brand!=='lepskr') extra += `<a href="${s.ttUrl}" target="_blank" onclick="event.stopPropagation()" style="flex:1;text-align:center;color:#fff;background:#111;border-radius:5px;padding:4px 0;font-size:10px;font-weight:700;text-decoration:none;display:block">🎵 TT</a>`;
+            if(s.yt&&S.brand==='lepskr') extra += `<a href="${s.yt}" target="_blank" onclick="event.stopPropagation()" style="flex:1;text-align:center;color:#fff;background:#ff0000;border-radius:5px;padding:4px 0;font-size:10px;font-weight:700;text-decoration:none;display:block">▶️ YT</a>`;
             extra += `</div>`;
           }
           // 인터렉션 수치
