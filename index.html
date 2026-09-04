@@ -759,7 +759,7 @@ function s2db(s, brand) {
 function safeJSON(v){try{return v?JSON.parse(v):{};}catch{return{};}} 
 function db2s(r) {
   return { _id: r.id, date: r.date||'', type: r.type||'ugc', typeCustom: r.type_custom||'',
-    title: r.title||'', time: r.time||'', ref: r.ref||'', igUrl: r.ig_url||'', ttUrl: r.tt_url||'', igStats: (()=>{const _d=safeJSON(r.ig_stats);delete _d._sf;return _d;})(), statusFlags: safeJSON(r.ig_stats)._sf||{}, ttStats: safeJSON(r.tt_stats), ytStats: safeJSON(r.yt_stats)||{}, thumb: r.thumb||'',
+    title: r.title||'', time: r.time||'', ref: r.ref||'', igUrl: r.ig_url||'', ttUrl: r.tt_url||'', yt: r.yt_url||'', igStats: (()=>{const _d=safeJSON(r.ig_stats);delete _d._sf;return _d;})(), statusFlags: safeJSON(r.ig_stats)._sf||{}, ttStats: safeJSON(r.tt_stats), ytStats: safeJSON(r.yt_stats)||{}, thumb: r.thumb||'',
     shootLocation: r.shoot_location||'', shootDirector: r.shoot_director||'',
     shootCreators: r.shoot_creators||[], memo: r.memo||'',
     content: r.content||'', product: r.product||'', uploadUrl: r.upload_url||'' };
@@ -794,7 +794,6 @@ async function loadThumb(slotId) {
 }
 
 async function dbSave(table, row) {
-  if (table === 'slots') console.log('💾 저장 데이터:', JSON.stringify({yt_url: row.yt_url, id: row.id, brand: row.brand}));
   const { error } = await db.from(table).upsert(row, { onConflict: 'id' });
   if (error) {
     console.error('save', table, error);
@@ -1498,7 +1497,6 @@ document.getElementById('save-slot-btn').addEventListener('click', () => {
   let obj;
   if(S.editSlotId) { obj=bd().slots.find(x=>x._id===S.editSlotId); if(obj) Object.assign(obj,d); }
   else { obj={_id:gid(),...d,shootLocation:'',shootDirector:'',shootCreators:[],memo:''}; bd().slots.push(obj); }
-  console.log('🏷 brand:', S.brand, 'yt:', obj.yt);
   if(obj) dbSave('slots',s2db(obj,S.brand));
   closeOv('ov-slot'); renderCal();
 });
