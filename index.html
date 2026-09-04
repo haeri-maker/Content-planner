@@ -751,7 +751,7 @@ const db = supabase.createClient(SB_URL, SB_KEY);
 /* ══ CONVERTERS ══ */
 function s2db(s, brand) {
   return { id: s._id, brand, date: s.date, type: s.type, type_custom: s.typeCustom||'',
-    title: s.title, time: s.time, ref: s.ref||'', ig_url: s.igUrl||'', tt_url: s.ttUrl||'', ig_stats: JSON.stringify({...(s.igStats||{}), _sf:(s.statusFlags||{})}), tt_stats: JSON.stringify(s.ttStats||{}), yt_stats: JSON.stringify(s.ytStats||{}), thumb: s.thumb,
+    title: s.title, time: s.time, ref: s.ref||'', ig_url: s.igUrl||'', tt_url: s.ttUrl||'', yt_url: s.yt||'', ig_stats: JSON.stringify({...(s.igStats||{}), _sf:(s.statusFlags||{})}), tt_stats: JSON.stringify(s.ttStats||{}), yt_stats: JSON.stringify(s.ytStats||{}), thumb: s.thumb,
     shoot_location: s.shootLocation, shoot_director: s.shootDirector,
     shoot_creators: s.shootCreators, memo: s.memo,
     content: s.content||'', product: s.product||'', upload_url: s.uploadUrl||'' };
