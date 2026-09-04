@@ -794,6 +794,7 @@ async function loadThumb(slotId) {
 }
 
 async function dbSave(table, row) {
+  if (table === 'slots') console.log('💾 저장 데이터:', JSON.stringify({yt_url: row.yt_url, id: row.id}));
   const { error } = await db.from(table).upsert(row, { onConflict: 'id' });
   if (error) {
     console.error('save', table, error);
