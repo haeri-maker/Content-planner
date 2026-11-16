@@ -1954,9 +1954,10 @@ function renderThumbBox(brand, offset, containerId) {
   container.style.padding = '10px';
   container.style.alignItems = 'start';
   container.innerHTML = slots.map(s => {
-    const ig = s.igStats||{}, tt = s.ttStats||{};
+    const ig = s.igStats||{}, tt = s.ttStats||{}, yt = s.ytStats||{};
     const hasIg = ig.like||ig.comment||ig.share||ig.save||ig.repost;
-    const hasTt = tt.like||tt.comment||tt.save;
+    const hasTt = (tt.like||tt.comment||tt.save) && brand!=='lepskr';
+    const hasYt = brand==='lepskr' && (yt.views||yt.like||yt.comment||yt.save);
     const igRow = hasIg ? `<div style="margin-top:6px;padding:6px 8px;background:#faedf3;border-radius:6px;color:#c8306a;line-height:1.9">
         <div style="font-size:11px;font-weight:700;margin-bottom:3px">📸 Instagram</div>
         <div style="font-size:10.5px;word-break:break-all">${ig.views?`👁 ${Number(ig.views).toLocaleString()} &nbsp;`:''}❤️ ${ig.like||0} &nbsp;💬 ${ig.comment||0} &nbsp;↗ ${ig.share||0} &nbsp;🔖 ${ig.save||0} &nbsp;🔁 ${ig.repost||0}</div>
@@ -1965,12 +1966,16 @@ function renderThumbBox(brand, offset, containerId) {
         <div style="font-size:11px;font-weight:700;margin-bottom:3px">🎵 TikTok</div>
         <div style="font-size:10.5px;word-break:break-all">${tt.views?`👁 ${Number(tt.views).toLocaleString()} &nbsp;`:''}❤️ ${tt.like||0} &nbsp;💬 ${tt.comment||0} &nbsp;🔖 ${tt.save||0}</div>
       </div>` : '';
+    const ytRow = hasYt ? `<div style="margin-top:4px;padding:6px 8px;background:#fff0f0;border-radius:6px;color:#cc0000;line-height:1.9">
+        <div style="font-size:11px;font-weight:700;margin-bottom:3px">▶️ YouTube</div>
+        <div style="font-size:10.5px;word-break:break-all">${yt.views?`👁 ${Number(yt.views).toLocaleString()} &nbsp;`:''}❤️ ${yt.like||0} &nbsp;💬 ${yt.comment||0} &nbsp;🔖 ${yt.save||0}</div>
+      </div>` : '';
     const contentLines = (s.content||s.title||'').split(String.fromCharCode(10)).join('<br>'); const productLines = s.product ? s.product.split(String.fromCharCode(10)).join('<br>') : '';
     return `<div style="min-width:0;overflow:hidden">
       <img src="${s.thumb}" style="width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:8px;border:1px solid var(--bd);display:block">
       ${contentLines?`<div style="font-size:11px;color:var(--tx);margin-top:5px;line-height:1.4;font-weight:500;word-break:break-word;overflow-wrap:break-word">${contentLines}</div>`:''}
       ${productLines?`<div style="font-size:10px;color:var(--tx2);margin-top:2px;line-height:1.4;word-break:break-word">📦 ${productLines}</div>`:''}
-      ${igRow}${ttRow}
+      ${igRow}${ttRow}${ytRow}
     </div>`;
   }).join('');
 }
