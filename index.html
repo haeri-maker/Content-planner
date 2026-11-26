@@ -199,6 +199,22 @@ td.tdn{color:var(--tx)}
 /* ── MISC ── */
 .empty{text-align:center;padding:28px;color:var(--tx3);font-size:12px}
 .empty-i{font-size:22px;margin-bottom:7px}
+
+/* 크리에이터 & 예산: 왼쪽 월별 사용 금액 패널 */
+.cr-split{display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start}
+.cr-months{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:10px;position:sticky;top:12px}
+.crm-title{font-size:11px;font-weight:600;color:var(--tx2);padding:2px 6px 8px}
+.crm-row{display:block;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:var(--rs);padding:8px 9px;margin-bottom:4px;cursor:pointer;font-family:inherit;color:var(--tx)}
+.crm-row:hover{background:var(--bg3)}
+.crm-row.on{background:var(--a-bg);border-color:var(--a-bd)}
+.crm-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.crm-m{font-size:12.5px;font-weight:600}
+.crm-amt{font-size:12.5px;font-weight:600;font-family:'DM Mono',monospace;color:var(--cr-c)}
+.crm-sub{font-size:10.5px;color:var(--tx3);margin-top:2px}
+.crm-bar{height:4px;background:var(--bg4);border-radius:3px;margin-top:6px;overflow:hidden}
+.crm-bar>i{display:block;height:100%;background:var(--cr-c);border-radius:3px}
+.crm-all{border-top:1px solid var(--bd);margin-top:6px;padding-top:6px}
+@media (max-width:820px){.cr-split{grid-template-columns:1fr}.cr-months{position:static}}
 </style>
 </head>
 <body>
@@ -293,19 +309,18 @@ td.tdn{color:var(--tx)}
   <div class="ph">
     <div>
       <div class="pt" id="cr-title">크리에이터 & 예산</div>
-      <div style="margin-top:5px">
-        <select id="cr-month-filter" onchange="renderCreators()" style="font-size:12px;padding:4px 10px;border-radius:var(--rs);border:1px solid var(--bd);background:var(--bg2);color:var(--tx)">
-          <option value="">전체 보기</option>
-        </select>
-      </div>
+      <div class="ps">왼쪽에서 달을 고르면 그 달의 크리에이터와 사용 금액이 보여요</div>
     </div>
     <button class="btn btn-p" onclick="openCrModal(null)">+ 크리에이터</button>
   </div>
-  <div class="stats" id="cr-stats"></div>
-  <div class="cr-grid" id="cr-list"></div>
+  <div class="cr-split">
+    <div class="cr-months" id="cr-months"></div>
+    <div class="cr-right">
+      <div class="stats" id="cr-stats"></div>
+      <div class="cr-grid" id="cr-list"></div>
+    </div>
+  </div>
 </div>
-
-
 
 <!-- REPORT -->
 <div class="panel" id="panel-report">
@@ -1660,29 +1675,52 @@ document.getElementById('save-cr-btn').addEventListener('click', async () => {
     bd().creators.push(obj);
   }
   if(obj) dbSave('creators',c2db(obj,S.brand));
+  if (data.date) crSel = data.date.slice(0, 7);
   closeOv('ov-cr'); renderCreators(); updateSB();
 });
+/* ══ 크리에이터 & 예산: 달별 사용 금액 (왼쪽 패널) ══ */
+let crSel = null;   // 'YYYY-MM' | 'none'(날짜 없음) | 'all'(전체 누적) | null(=이번 달)
+function crThisMonth() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+function crMonthOf(cr) { return cr.date ? cr.date.slice(0, 7) : 'none'; }
+function crLabel(k) { return k.slice(0, 4) + '년 ' + parseInt(k.slice(5), 10) + '월'; }
+function crPick(k) { crSel = k; renderCreators(); }
+function renderCrMonths(allCrs) {
+  const el = document.getElementById('cr-months');
+  if (!el) return;
+  const by = {};
+  allCrs.forEach(cr => { const k = crMonthOf(cr); if (!by[k]) by[k] = { sum: 0, n: 0 }; by[k].sum += (cr.fee || 0); by[k].n += 1; });
+  const cur = crThisMonth();
+  if (!by[cur]) by[cur] = { sum: 0, n: 0 };                    // 이번 달은 비어 있어도 항상 보이게
+  const months = Object.keys(by).filter(k => k !== 'none').sort().reverse();
+  const max = Math.max(1, ...months.map(k => by[k].sum));
+  const total = allCrs.reduce((s, c2) => s + (c2.fee || 0), 0);
+  const sel = crSel || cur;
+  let html = '<div class="crm-title">월별 사용 금액</div>';
+  html += months.map(k => `<button class="crm-row${sel === k ? ' on' : ''}" onclick="crPick('${k}')">
+      <div class="crm-top"><span class="crm-m">${crLabel(k)}${k === cur ? ' <span style="font-size:9px;color:var(--a)">이번 달</span>' : ''}</span><span class="crm-amt">₩${by[k].sum.toLocaleString()}</span></div>
+      <div class="crm-sub">${by[k].n}명</div>
+      <div class="crm-bar"><i style="width:${Math.round(by[k].sum / max * 100)}%"></i></div>
+    </button>`).join('');
+  if (by.none) html += `<button class="crm-row${sel === 'none' ? ' on' : ''}" onclick="crPick('none')">
+      <div class="crm-top"><span class="crm-m">날짜 없음</span><span class="crm-amt">₩${by.none.sum.toLocaleString()}</span></div>
+      <div class="crm-sub">${by.none.n}명 · 업로드일을 넣으면 달에 들어가요</div></button>`;
+  html += `<div class="crm-all"><button class="crm-row${sel === 'all' ? ' on' : ''}" onclick="crPick('all')">
+      <div class="crm-top"><span class="crm-m">전체 누적</span><span class="crm-amt">₩${total.toLocaleString()}</span></div>
+      <div class="crm-sub">${allCrs.length}명</div></button></div>`;
+  el.innerHTML = html;
+}
+
 function renderCreators() {
   const brand = S.brand;
   const brandName = {labo:'Laboreve',leps:'LEPS',nuri:'Nuriglow',lepskr:'LEPS_KR'}[brand]||brand;
   document.getElementById('cr-title').textContent = brandName + ' 크리에이터';
 
   const allCrs = bd().creators;
-
-  // 월 필터 드롭다운 업데이트
-  const sel = document.getElementById('cr-month-filter');
-  if (sel) {
-    const months = [...new Set(allCrs.map(cr => cr.date ? cr.date.slice(0,7) : '').filter(Boolean))].sort().reverse();
-    const cur = sel.value;
-    sel.innerHTML = '<option value="">전체 보기</option>' +
-      months.map(m => `<option value="${m}" ${m===cur?'selected':''}>${m.replace('-','년 ')}월</option>`).join('');
-  }
-
-  // 필터 적용
-  const filterMonth = sel?.value || '';
-  const crs = filterMonth
-    ? allCrs.filter(cr => cr.date && cr.date.slice(0,7) === filterMonth)
-    : allCrs;
+  const selKey = crSel || crThisMonth();
+  renderCrMonths(allCrs);
+  const crs = selKey === 'all' ? allCrs
+            : selKey === 'none' ? allCrs.filter(cr => !cr.date)
+            : allCrs.filter(cr => cr.date && cr.date.slice(0, 7) === selKey);
 
   // 통계
   const tot = crs.reduce((s,c)=>s+(c.fee||0),0);
@@ -1692,7 +1730,7 @@ function renderCreators() {
     <div class="stat"><div class="stat-v">${crs.length}</div><div class="stat-l">전체</div></div>
     <div class="stat"><div class="stat-v" style="color:var(--nuri)">${crs.filter(c=>c.status==='confirmed'||c.status==='done').length}</div><div class="stat-l">확정/완료</div></div>
     <div class="stat"><div class="stat-v" style="color:var(--rec-c)">${crs.filter(c=>c.status==='contact').length}</div><div class="stat-l">연락중</div></div>
-    <div class="stat"><div class="stat-v" style="color:var(--cr-c)">₩${tot.toLocaleString()}</div><div class="stat-l">총 비용</div></div>`;
+    <div class="stat"><div class="stat-v" style="color:var(--cr-c)">₩${tot.toLocaleString()}</div><div class="stat-l">${selKey === 'all' ? '전체 누적' : selKey === 'none' ? '날짜 없음 합계' : crLabel(selKey) + ' 사용 금액'}</div></div>`;
 
   if (!crs.length) {
     document.getElementById('cr-list').innerHTML = '<div class="empty"><div class="empty-i">🎬</div>크리에이터를 추가해보세요</div>';
@@ -1849,7 +1887,7 @@ function updateSB() {
   await loadDB();
   await loadUGC();
   await loadAllCreatorVideos();
-  await autoArchiveIfNeeded();
+  // 월별 보기로 바뀌어서 자동 아카이브(카드를 옮겨 숨기던 동작)는 쓰지 않아요
   switchBrand('nuri');
   if (!D.lepskr) D.lepskr = { slots:[], creators:[], expenses:[] };
   setupRT();
@@ -2761,6 +2799,7 @@ async function confirmCrCopy() {
   if (!D[targetBrand]) D[targetBrand] = { slots:[], creators:[], expenses:[] };
   D[targetBrand].creators.push(newCr);
   await dbSave('creators', c2db(newCr, targetBrand));
+  if (newCr.date) crSel = newCr.date.slice(0, 7);
   closeOv('ov-cr-copy');
   // 대상 브랜드로 전환
   if (targetBrand !== S.brand) {
