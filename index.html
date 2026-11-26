@@ -1739,7 +1739,8 @@ function renderCreators() {
 
   document.getElementById('cr-list').innerHTML = crs.map(cr => {
     const videos = CREATOR_VIDEOS[cr._id]||[];
-    const monthBadge = cr.date ? `<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:var(--a-bg);color:var(--a);border:0.5px solid var(--a-bd);margin-left:5px">${cr.date.slice(0,7).replace('-','년 ')}월</span>` : '';
+    // 달을 고른 화면에서는 필요 없어서 숨기고, '전체 누적' 화면에서만 어느 달인지 이름 아래에 한 줄로 표시
+    const monthBadge = (selKey === 'all' && cr.date) ? `<div style="margin-top:3px"><span style="font-size:9.5px;padding:1px 7px;border-radius:10px;background:var(--a-bg);color:var(--a);border:0.5px solid var(--a-bd);white-space:nowrap">${crLabel(cr.date.slice(0,7))}</span></div>` : '';
     const videoHtml = videos.map(v=>`
       <div style="display:flex;align-items:center;gap:7px;padding:7px 9px;background:var(--bg3);border-radius:var(--rs);border:1px solid var(--bd);margin-bottom:5px">
         <span style="flex:1;font-size:11.5px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.title||'제목없음'}</span>
@@ -1758,8 +1759,8 @@ function renderCreators() {
         <div style="flex:1;min-width:0">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
             <div>
-              <span style="font-size:14px;font-weight:600">${cr.name}</span>${monthBadge}
-              <div style="font-size:11px;color:var(--tx2)">${cr.handle}</div>
+              <span style="font-size:14px;font-weight:600">${cr.name}</span>
+              <div style="font-size:11px;color:var(--tx2)">${cr.handle}</div>${monthBadge}
             </div>
             <span class="badge ${sb[cr.status]}">${sl[cr.status]}</span>
           </div>
